@@ -1,0 +1,40 @@
+
+> erp-admin@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.5
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 4.3s
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 4.2s (1684 modules)
+ GET /dashboard 200 in 4545ms
+ ✓ Compiled in 420ms (834 modules)
+ ○ Compiling /suppliers ...
+ ✓ Compiled /suppliers in 722ms (1692 modules)
+ GET /suppliers 200 in 850ms
+ ✓ Compiled /search in 237ms (1702 modules)
+ GET /search 200 in 347ms
+ ✓ Compiled /approvals in 308ms (1720 modules)
+ GET /approvals 200 in 397ms
+ ✓ Compiled /purchasing in 290ms (1734 modules)
+ GET /purchasing 200 in 379ms
+ ✓ Compiled /finance/billing in 268ms (1746 modules)
+ GET /finance/billing 200 in 348ms
+ ✓ Compiled /sales/panel in 460ms (1766 modules)
+ GET /sales/panel 200 in 613ms
+ ✓ Compiled /products/pricing in 315ms (1776 modules)
+ GET /products/pricing 200 in 398ms
+ ✓ Compiled /finance/billing-history in 267ms (1784 modules)
+ GET /finance/billing-history 200 in 348ms
+ ○ Compiling / ...
+ ✓ Compiled / in 847ms (1142 modules)
+ GET / 200 in 979ms
+ ✓ Compiled /_not-found in 223ms (1131 modules)
+ GET /_next/static/css/app/layout.css?v=1789492052257 404 in 322ms
+ GET /_next/static/chunks/main-app.js?v=1789492052257 404 in 284ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 283ms
+ GET /_next/static/css/app/layout.css?v=1789492052257 404 in 27ms
+ ✓ Compiled /icon.png in 109ms (288 modules)
+ GET /icon.png?ed239c005e4946c2 200 in 171ms
