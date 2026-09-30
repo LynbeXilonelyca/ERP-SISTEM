@@ -3,6 +3,10 @@ node_modules
 out
 build
 next-env.d.ts
+Assest
+dev-server.log
+start-dev.bat
+create-shortcut.vbs
 
 .env
 .env.local
@@ -14,3 +18,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.vercel

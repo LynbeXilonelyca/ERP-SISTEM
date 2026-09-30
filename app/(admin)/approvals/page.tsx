@@ -386,7 +386,7 @@ export default function ApprovalsPage() {
       <div className="card p-0 overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 p-4 border-b border-brand-gray-border">
           <p className="text-xs font-bold text-brand-black">
-            Menunggu Persetujuan â€” {totalPending} item
+            Menunggu Persetujuan - {totalPending} item
           </p>
         </div>
 
