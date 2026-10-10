@@ -41,7 +41,7 @@ const topActions = [
   { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
   { label: "Update Stok", href: "/inventory", icon: <Boxes className="w-3.5 h-3.5" /> },
   { label: "Tambah Produk", href: "/products?new=1", icon: <PackagePlus className="w-3.5 h-3.5" /> },
-  { label: "Approval", href: "/approvals", icon: <ClipboardCheck className="w-3.5 h-3.5" /> },
+  { label: "Approval Session", href: "/finance/billing-history", icon: <ClipboardCheck className="w-3.5 h-3.5" /> },
   { label: "Tambah Customer", href: "/customers?new=1", icon: <UserPlus className="w-3.5 h-3.5" /> },
 ];
 

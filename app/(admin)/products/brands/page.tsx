@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -80,7 +80,7 @@ export default function BrandsPage() {
       ...db,
       brands: db.brands.filter((x) => x.id !== b.id),
       products: db.products.map((p) =>
-        p.brand_id === b.id ? { ...p, brand_id: "", brand_name: "â€”" } : p
+        p.brand_id === b.id ? { ...p, brand_id: "", brand_name: "—" } : p
       ),
     }));
     addAudit({

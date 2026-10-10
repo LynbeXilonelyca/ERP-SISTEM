@@ -14,6 +14,12 @@ import { paymentTerms } from "@/lib/seed";
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -54,23 +60,27 @@ export default function DashboardPage() {
     settings,
     payments,
     price_change_requests,
-    billing_sessions,
     inventory,
     setDB,
     notify,
     addAudit,
   } = useData();
 
-  // ── Real metrics ─────────────────────────────────────────────
+  // --- Real metrics ---
   const countable = (i: (typeof invoices)[number]) =>
     i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED";
+
+  const currentMonthKey = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
 
   const monthRevenue = useMemo(
     () =>
       invoices
-        .filter((i) => countable(i) && i.created_at.slice(0, 7) === "2026-09")
+        .filter((i) => countable(i) && i.created_at.slice(0, 7) === currentMonthKey)
         .reduce((a, i) => a + i.total, 0),
-    [invoices]
+    [invoices, currentMonthKey]
   );
 
   const paidMap = useMemo(() => {
@@ -103,8 +113,7 @@ export default function DashboardPage() {
     invoices.filter((i) => i.invoice_status === "PENDING_SUPER").length +
     purchases.filter((p) => p.status === "SUBMITTED").length +
     price_change_requests.filter((r) => r.status === "PENDING").length +
-    sessions.filter((s) => s.status === "PENDING_REVIEW").length +
-    billing_sessions.filter((b) => b.status === "PENDING" || b.status === "REVIEWED").length;
+    sessions.filter((s) => s.status === "SUBMITTED" || s.status === "REVIEWED").length;
 
   // Revenue 7 hari terakhir (jalur data nyata)
   const revenueChart = useMemo(() => {
@@ -123,7 +132,50 @@ export default function DashboardPage() {
     return days;
   }, [invoices]);
 
-  // ── Reminder H-1 (berbasis teks) ─────────────────────────────
+  // Revenue 12 bulan terakhir per bulan (tagihan + terkumpul)
+  const monthlyChart = useMemo(() => {
+    const monthFmt = new Intl.DateTimeFormat("id-ID", { month: "short" });
+    const out: { bulan: string; revenue: number; collected: number; invoices: number }[] = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const list = invoices.filter((inv) => countable(inv) && inv.created_at.slice(0, 7) === key);
+      out.push({
+        bulan: monthFmt.format(d),
+        revenue: list.reduce((a, inv) => a + inv.total, 0),
+        collected: list.reduce((a, inv) => a + Math.min(inv.total, paidMap.get(inv.id) ?? 0), 0),
+        invoices: list.length,
+      });
+    }
+    return out;
+  }, [invoices, paidMap]);
+
+  // Komposisi outstanding: per sales atau per customer
+  const [outstandingBy, setOutstandingBy] = useState<"sales" | "customer">("sales");
+  const outstandingChart = useMemo(() => {
+    const m = new Map<string, number>();
+    invoices
+      .filter(countable)
+      .forEach((inv) => {
+        const unpaid = Math.max(0, inv.total - (paidMap.get(inv.id) ?? 0));
+        if (unpaid <= 0) return;
+        const key =
+          outstandingBy === "sales"
+            ? inv.sales_name || "Tanpa Sales"
+            : inv.store_name || inv.customer_name;
+        m.set(key, (m.get(key) ?? 0) + unpaid);
+      });
+    return Array.from(m.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [invoices, paidMap, outstandingBy]);
+
+  const PIE_COLORS = ["#feda00", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#f97316", "#14b8a6", "#ec4899"];
+  const monthlyTotal = monthlyChart.reduce((a, m) => a + m.revenue, 0);
+
+  // --- Reminder H-1 (berbasis teks) ---
   const reminders = useMemo(() => {
     const list: { text: string; tone: "warn" | "danger" | "info"; icon: React.ReactNode }[] = [];
     if (!settings.reminder_h1_enabled) return list;
@@ -149,16 +201,16 @@ export default function DashboardPage() {
       });
     if (settings.cut_off_enabled) {
       invoices
-        .filter((i) => countable(i) && i.payment_status !== "PAID")
+        .filter((i) => countable(i) && i.payment_status !== "PAID" && !!i.due_date)
         .forEach((i) => {
-          const age = Math.floor((now - new Date(i.created_at).getTime()) / dayMs);
-          if (age === settings.cut_off_days - 1)
-            list.push({ text: `H-1 cut off: ${i.invoice_number} (${i.store_name}) akan diblokir besok`, tone: "danger", icon: <AlertTriangle className="w-3 h-3" /> });
+          const due = new Date(`${i.due_date}T23:59:59`).getTime();
+          if (due < now && now - due <= dayMs)
+            list.push({ text: `H-1 cut off: ${i.invoice_number} (${i.store_name}) melewati jatuh tempo`, tone: "danger", icon: <AlertTriangle className="w-3 h-3" /> });
         });
     }
     sessions
-      .filter((s) => s.status === "PENDING_REVIEW")
-      .forEach((s) => list.push({ text: `Sesi ${s.session_code} ${s.sales_name} menunggu tutup bulan`, tone: "info", icon: <Bell className="w-3 h-3" /> }));
+      .filter((s) => s.status === "SUBMITTED" || s.status === "REVIEWED")
+      .forEach((s) => list.push({ text: `Sesi ${s.session_code} ${s.sales_name} menunggu pembuktian penagihan`, tone: "info", icon: <Bell className="w-3 h-3" /> }));
     return list;
   }, [settings, invoices, purchases, orders, sessions]);
 
@@ -167,7 +219,7 @@ export default function DashboardPage() {
     [customers, invoices, settings]
   );
 
-  // ── Form customer baru ───────────────────────────────────────
+  // --- Form customer baru ---
   const [showCustomer, setShowCustomer] = useState(false);
   const [custForm, setCustForm] = useState({
     store_name: "",
@@ -220,11 +272,11 @@ export default function DashboardPage() {
     setCustForm({ store_name: "", owner_name: "", sales_id: "", phone: "", email: "", address: "", city: "", customer_type: "REGULAR", payment_term_id: "pt7" });
   };
 
-  // ── Pengaturan (komisi, cut off, reminder) ───────────────────
+  // --- Pengaturan (komisi, cut off, reminder) ---
   const [form, setForm] = useState({ ...settings });
 
   const saveSettings = () => {
-    setDB((db) => ({ ...db, settings: { ...form, cut_off_days: Math.max(1, Number(form.cut_off_days) || 30) } }));
+    setDB((db) => ({ ...db, settings: { ...form } }));
     notify({ title: "Pengaturan Disimpan", message: "Komisi, cut off, dan reminder diperbarui.", type: "SUCCESS" });
   };
 
@@ -252,14 +304,14 @@ export default function DashboardPage() {
         breadcrumbs={[{ label: "Home" }, { label: "Dashboard" }]}
       />
 
-      {/* ── Stats ringkasan (real) ─────────────────────────── */}
+      {/* --- Stats ringkasan (real) --- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 {ringkasan.map((s) => (
           <StatCard key={s.label} title={s.label} value={s.value} icon={s.icon} accent={s.accent} />
         ))}
       </div>
 
-      {/* ── Aksi Cepat (terpisah) ──────────────────────────── */}
+      {/* --- Aksi Cepat (terpisah) --- */}
       <div className="card">
         <p className="section-title mb-3 flex items-center gap-2">
           <Zap className="w-4 h-4" /> Aksi Cepat
@@ -296,7 +348,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Pusat Pengaturan ──────────────────────────────── */}
+      {/* --- Pusat Pengaturan --- */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <p className="section-title flex items-center gap-2"><Settings className="w-4 h-4" /> Pusat Pengaturan</p>
@@ -309,9 +361,61 @@ export default function DashboardPage() {
               <BadgeDollarSign className="w-3.5 h-3.5" /> Komisi
             </p>
             <div className="space-y-3">
-              <Input label="Komisi Utama" type="number" value={String(form.main_commission_rate ?? 5)} onChange={(e) => setForm({ ...form, main_commission_rate: Number(e.target.value) })} />
-              <Input label="Merek Sendiri" type="number" value={String(form.own_brand_commission_rate ?? 5)} onChange={(e) => setForm({ ...form, own_brand_commission_rate: Number(e.target.value) })} />
-              <Input label="Merek Lain" type="number" value={String(form.other_brand_commission_rate ?? 3)} onChange={(e) => setForm({ ...form, other_brand_commission_rate: Number(e.target.value) })} />
+              <Input label="Merek Sendiri (%)" type="number" value={String(form.own_brand_commission_rate)} onChange={(e) => setForm({ ...form, own_brand_commission_rate: Number(e.target.value) })} />
+              <Input label="Merek Lain (%)" type="number" value={String(form.other_brand_commission_rate)} onChange={(e) => setForm({ ...form, other_brand_commission_rate: Number(e.target.value) })} />
+              <Input label="Threshold Cair (%)" type="number" value={String(form.commission_threshold_pct)} onChange={(e) => setForm({ ...form, commission_threshold_pct: Number(e.target.value) })} />
+              <div className="flex items-center gap-3 p-3 bg-brand-bg rounded-xl">
+                <div className="flex-1">
+                  <label className="form-label">Bonus Capaian 100% (Rp)</label>
+                  <input type="number" className="form-input" value={String(form.bonus_amount)} onChange={(e) => setForm({ ...form, bonus_amount: Number(e.target.value) })} />
+                </div>
+                <label className="flex items-center gap-2 text-xs font-semibold text-brand-gray-dark cursor-pointer pt-5">
+                  <input type="checkbox" checked={!!form.bonus_enabled} onChange={(e) => setForm({ ...form, bonus_enabled: e.target.checked })} className="w-4 h-4 accent-brand-yellow" />
+                  Aktif
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Jatuh tempo komisi */}
+          <div>
+            <p className="text-xs font-bold text-brand-gray-mid uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" /> Jatuh Tempo Komisi
+            </p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  "Januari",
+                  "Februari",
+                  "Maret",
+                  "April",
+                  "Mei",
+                  "Juni",
+                  "Juli",
+                  "Agustus",
+                  "September",
+                  "Oktober",
+                  "November",
+                  "Desember",
+                ].map((m, i) => (
+                  <Input
+                    key={m}
+                    label={m}
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={String(form.commission_due_days?.[i] ?? 25)}
+                    onChange={(e) => {
+                      const days = [...(form.commission_due_days ?? [])];
+                      days[i] = Number(e.target.value);
+                      setForm({ ...form, commission_due_days: days });
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="text-[10px] text-brand-gray-light">
+                Atur tanggal jatuh tempo komisi untuk tiap bulan. Lewat tanggal tsb, penagihan yang telat dibayar otomatis dibatasi (komisi distop sesuai kebijakan).
+              </p>
             </div>
           </div>
 
@@ -321,7 +425,9 @@ export default function DashboardPage() {
               <Clock className="w-3.5 h-3.5" /> Cut Off & Reminder
             </p>
             <div className="space-y-3">
-              <Input label="Tenggat Piutang (hari)" type="number" value={String(form.cut_off_days ?? 30)} onChange={(e) => setForm({ ...form, cut_off_days: Number(e.target.value) })} />
+              <p className="text-[10px] text-brand-gray-light -mt-1">
+                Cut off otomatis: pelanggan diblokir jika ada invoice belum lunas yang melewati jatuh tempunya.
+              </p>
               <label className="flex items-center justify-between p-3 bg-brand-bg rounded-xl cursor-pointer">
                 <span className="text-xs font-semibold text-brand-gray-dark">Aktifkan Cut Off</span>
                 <input type="checkbox" checked={!!form.cut_off_enabled} onChange={(e) => setForm({ ...form, cut_off_enabled: e.target.checked })} className="w-4 h-4 accent-brand-yellow" />
@@ -366,7 +472,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Reminder H-1 ───────────────────────────────────── */}
+      {/* --- Reminder H-1 --- */}
       {reminders.length > 0 && (
         <div className="card">
           <p className="section-title mb-3 flex items-center gap-2">
@@ -384,7 +490,107 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Revenue 7 hari + low stock ─────────────────────── */}
+      {/* --- Revenue 12 bulan + komposisi outstanding --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="card lg:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <p className="section-title">Revenue 12 Bulan Terakhir</p>
+            <span className="text-xs text-brand-gray-light">
+              Total {formatCurrency(monthlyTotal)}
+            </span>
+          </div>
+          <p className="text-[10px] text-brand-gray-light mb-3">
+            Tagihan (kuning) vs pembayaran terkumpul (hijau) per bulan.
+          </p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={monthlyChart} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis dataKey="bulan" tick={{ fontSize: 10, fill: "#999" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#999" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Number(v) / 1000000}jt`} />
+              <Tooltip
+                formatter={(v: number, name: string) => [
+                  formatCurrency(v),
+                  name === "revenue" ? "Tagihan" : name === "collected" ? "Terkumpul" : "Invoice",
+                ]}
+                contentStyle={{ borderRadius: 12, border: "1px solid #e0e0e0", fontSize: 12 }}
+              />
+              <Legend
+                formatter={(v: string) => (v === "revenue" ? "Tagihan" : v === "collected" ? "Terkumpul" : "Invoice")}
+                wrapperStyle={{ fontSize: 11 }}
+              />
+              <Bar dataKey="revenue" fill="#feda00" radius={[6, 6, 0, 0]} maxBarSize={22} />
+              <Bar dataKey="collected" fill="#22c55e" radius={[6, 6, 0, 0]} maxBarSize={22} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center justify-between mb-1">
+            <p className="section-title">Komposisi Outstanding</p>
+            <div className="flex items-center gap-1 bg-brand-bg rounded-lg p-0.5">
+              {(["sales", "customer"] as const).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setOutstandingBy(k)}
+                  className={cn(
+                    "px-2 py-1 rounded-md text-[10px] font-bold transition-colors",
+                    outstandingBy === k ? "bg-brand-yellow text-brand-black" : "text-brand-gray-mid"
+                  )}
+                >
+                  {k === "sales" ? "Per Sales" : "Per Customer"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-[10px] text-brand-gray-light mb-3">
+            Total {formatCurrency(outstandingChart.reduce((a, x) => a + x.value, 0))}
+          </p>
+          {outstandingChart.length === 0 ? (
+            <p className="text-sm text-brand-gray-light py-10 text-center">Tidak ada piutang. Semua lunas.</p>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={outstandingChart}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    stroke="#fff"
+                    strokeWidth={2}
+                  >
+                    {outstandingChart.map((x, i) => (
+                      <Cell key={x.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v: number) => formatCurrency(v)}
+                    contentStyle={{ borderRadius: 12, border: "1px solid #e0e0e0", fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-1.5 mt-1">
+                {outstandingChart.map((x, i) => (
+                  <div key={x.name} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-brand-gray-dark font-semibold">
+                      <span
+                        className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
+                      />
+                      <span className="truncate">{x.name}</span>
+                    </span>
+                    <span className="font-bold text-brand-black flex-shrink-0 ml-2">{formatCurrency(x.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* --- Revenue 7 hari + low stock --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
@@ -430,7 +636,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Cut off + Orderan + Invoice terbaru ────────────── */}
+      {/* --- Cut off + Orderan + Invoice terbaru --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="card p-4">
           <p className="section-title mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Customer Kena Cut Off</p>
@@ -495,7 +701,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Modal Input Customer ───────────────────────────── */}
+      {/* --- Modal Input Customer --- */}
       <Modal
         open={showCustomer}
         onClose={() => setShowCustomer(false)}

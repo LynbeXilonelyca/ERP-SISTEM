@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
       categories: db.categories.filter((c) => c.id !== cat.id),
       products: db.products.map((p) =>
         p.category_id === cat.id
-          ? { ...p, category_id: "", category_name: "â€”", sub_category_id: "", sub_category_name: "â€”" }
+          ? { ...p, category_id: "", category_name: "—", sub_category_id: "", sub_category_name: "—" }
           : p
       ),
     }));
@@ -112,7 +112,7 @@ export default function CategoriesPage() {
       ),
       products: db.products.map((p) =>
         p.sub_category_id === subId
-          ? { ...p, sub_category_id: "", sub_category_name: "â€”" }
+          ? { ...p, sub_category_id: "", sub_category_name: "—" }
           : p
       ),
     }));
@@ -241,7 +241,7 @@ export default function CategoriesPage() {
       <Modal
         open={!!subFor}
         onClose={() => setSubFor(null)}
-        title={`Tambah Sub Kategori â€” ${subFor?.name ?? ""}`}
+        title={`Tambah Sub Kategori — ${subFor?.name ?? ""}`}
         size="sm"
         footer={
           <>

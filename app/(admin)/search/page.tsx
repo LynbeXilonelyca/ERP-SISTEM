@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -147,7 +147,7 @@ export default function SearchPage() {
       {q && visible("product") && (
         <ResultSection title="Produk" icon={<Package className="w-4 h-4" />} count={productResults.length}>
           {productResults.map((p) => (
-            <Row key={p.id} title={p.name} sub={p.sku + " Â· " + p.brand_name} right={
+            <Row key={p.id} title={p.name} sub={p.sku + " · " + p.brand_name} right={
               <div className="text-right">
                 <p className="text-sm font-bold text-brand-black">{formatCurrency(p.prices[0]?.price ?? 0)}</p>
                 <p className="text-[10px] text-brand-gray-light">{p.category_name}</p>
@@ -160,7 +160,7 @@ export default function SearchPage() {
       {q && visible("customer") && (
         <ResultSection title="Customer" icon={<Users className="w-4 h-4" />} count={customerResults.length}>
           {customerResults.map((c) => (
-            <Row key={c.id} title={c.store_name} sub={c.owner_name + " Â· " + c.city + " Â· PIC " + c.sales_name} right={
+            <Row key={c.id} title={c.store_name} sub={c.owner_name + " · " + c.city + " · PIC " + c.sales_name} right={
               <div className="text-right">
                 <p className="text-sm font-bold text-brand-black">{formatCurrency(c.outstanding)}</p>
                 <p className="text-[10px] text-brand-gray-light">Outstanding</p>
@@ -173,7 +173,7 @@ export default function SearchPage() {
       {q && visible("invoice") && (
         <ResultSection title="Invoice" icon={<FileText className="w-4 h-4" />} count={invoiceResults.length}>
           {invoiceResults.map((i) => (
-            <Row key={i.id} title={i.invoice_number} sub={i.store_name + " Â· " + i.sales_name + " Â· " + formatDate(i.created_at)} right={<div className="text-right"><Badge variant={i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED" ? "success" : "default"}>{i.invoice_status.replace(/_/g, " ")}</Badge><p className="text-xs font-bold text-brand-black mt-1">{formatCurrency(i.total)}</p></div>} />
+            <Row key={i.id} title={i.invoice_number} sub={i.store_name + " · " + i.sales_name + " · " + formatDate(i.created_at)} right={<div className="text-right"><Badge variant={i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED" ? "success" : "default"}>{i.invoice_status.replace(/_/g, " ")}</Badge><p className="text-xs font-bold text-brand-black mt-1">{formatCurrency(i.total)}</p></div>} />
           ))}
         </ResultSection>
       )}
@@ -181,7 +181,7 @@ export default function SearchPage() {
       {q && visible("purchase") && (
         <ResultSection title="Purchase" icon={<ShoppingCart className="w-4 h-4" />} count={purchaseResults.length}>
           {purchaseResults.map((p) => (
-            <Row key={p.id} title={p.purchase_code} sub={"Supplier: " + p.supplier_name + (p.for_sales_name ? " Â· Untuk: " + p.for_sales_name : "") + " Â· " + formatDate(p.created_at)} right={<div className="text-right"><p className="text-xs font-bold text-brand-black">{formatCurrency(p.total_amount)}</p><p className="text-[10px] text-brand-gray-light uppercase">{p.status}</p></div>} />
+            <Row key={p.id} title={p.purchase_code} sub={"Supplier: " + p.supplier_name + (p.for_sales_name ? " · Untuk: " + p.for_sales_name : "") + " · " + formatDate(p.created_at)} right={<div className="text-right"><p className="text-xs font-bold text-brand-black">{formatCurrency(p.total_amount)}</p><p className="text-[10px] text-brand-gray-light uppercase">{p.status}</p></div>} />
           ))}
         </ResultSection>
       )}
@@ -189,7 +189,7 @@ export default function SearchPage() {
       {q && visible("supplier") && (
         <ResultSection title="Supplier" icon={<Truck className="w-4 h-4" />} count={supplierResults.length}>
           {supplierResults.map((s) => (
-            <Row key={s.id} title={s.name} sub={s.supplier_code + " Â· " + s.contact_person + " Â· " + s.phone} right={<Badge variant={s.status === "ACTIVE" ? "success" : "gray"}>{s.status}</Badge>} />
+            <Row key={s.id} title={s.name} sub={s.supplier_code + " · " + s.contact_person + " · " + s.phone} right={<Badge variant={s.status === "ACTIVE" ? "success" : "gray"}>{s.status}</Badge>} />
           ))}
         </ResultSection>
       )}
@@ -197,7 +197,7 @@ export default function SearchPage() {
       {q && visible("order") && (
         <ResultSection title="Order" icon={<ClipboardList className="w-4 h-4" />} count={orderResults.length}>
           {orderResults.map((o) => (
-            <Row key={o.id} title={o.order_code} sub={"Supplier: " + o.supplier_name + " Â· Sales: " + o.sales_name + " Â· " + formatDate(o.created_at)} right={<div className="text-right"><p className="text-xs font-bold text-brand-black">{formatCurrency(o.total_amount)}</p><p className="text-[10px] text-brand-gray-light uppercase">{o.status.replace(/_/g, " ")}</p></div>} />
+            <Row key={o.id} title={o.order_code} sub={"Supplier: " + o.supplier_name + " · Sales: " + o.sales_name + " · " + formatDate(o.created_at)} right={<div className="text-right"><p className="text-xs font-bold text-brand-black">{formatCurrency(o.total_amount)}</p><p className="text-[10px] text-brand-gray-light uppercase">{o.status.replace(/_/g, " ")}</p></div>} />
           ))}
         </ResultSection>
       )}

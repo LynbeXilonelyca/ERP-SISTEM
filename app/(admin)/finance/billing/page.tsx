@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -86,7 +86,7 @@ export default function BillingPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [printInvoice, setPrintInvoice] = useState<string | null>(null);
 
-  // â”€â”€ Orderan (jalur purchase â†’ sales â†’ finance) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Orderan (jalur purchase → sales → finance) ---
   const readyOrders = useMemo(
     () => orders.filter((o) => o.status === "APPROVED_BY_SALES").sort((a, b) => a.created_at.localeCompare(b.created_at)),
     [orders]
@@ -109,7 +109,7 @@ export default function BillingPage() {
     setOrderCustomerId("");
     setOrderPrices(o.items.map((it) => it.cost_price));
     const d = new Date();
-    d.setDate(d.getDate() + Math.max(1, settings.cut_off_days));
+    d.setDate(d.getDate() + 30);
     setDueDate(d.toISOString().slice(0, 10));
   };
 
@@ -194,7 +194,7 @@ export default function BillingPage() {
   const orderStatusBadge = (s: string) => {
     const map: Record<string, { label: string; cls: string }> = {
       AWAITING_SALES: { label: "Menunggu Sales", cls: "bg-orange-100 text-orange-600" },
-      APPROVED_BY_SALES: { label: "Barang Ada â€” Siap Tagih", cls: "bg-blue-100 text-blue-600" },
+      APPROVED_BY_SALES: { label: "Barang Ada — Siap Tagih", cls: "bg-blue-100 text-blue-600" },
       REJECTED_BY_SALES: { label: "Barang Tidak Ada", cls: "bg-red-100 text-red-500" },
       INVOICE_PENDING: { label: "Invoice Menunggu Approval", cls: "bg-purple-100 text-purple-600" },
       COMPLETED: { label: "Selesai", cls: "bg-green-100 text-green-600" },
@@ -257,7 +257,7 @@ export default function BillingPage() {
       label: "Sisa",
       render: (v: unknown) => (
         <span className={`text-xs font-bold ${Number(v) > 0 ? "text-red-500" : "text-brand-gray-light"}`}>
-          {Number(v) > 0 ? formatCurrency(Number(v)) : "â€”"}
+          {Number(v) > 0 ? formatCurrency(Number(v)) : "—"}
         </span>
       ),
     },
@@ -347,7 +347,7 @@ export default function BillingPage() {
           <div className="card p-0 overflow-hidden">
             <div className="p-4 border-b border-brand-gray-border">
               <p className="section-title">Order Menunggu Invoice</p>
-              <p className="text-xs text-brand-gray-light">Sales sudah mengonfirmasi barang tersedia. Buat invoice â†’ Super Admin approve â†’ tercatat di history.</p>
+              <p className="text-xs text-brand-gray-light">Sales sudah mengonfirmasi barang tersedia. Buat invoice → Super Admin approve → tercatat di history.</p>
             </div>
             <div className="divide-y divide-brand-gray-border">
               {readyOrders.length === 0 && <p className="p-4 text-sm text-brand-gray-light">Tidak ada order yang siap ditagih.</p>}
@@ -355,7 +355,7 @@ export default function BillingPage() {
                 <div key={o.id} className="p-4 flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1 min-w-[180px]">
                     <p className="text-sm font-bold text-brand-black">{o.order_code}</p>
-                    <p className="text-xs text-brand-gray-mid">Supplier: {o.supplier_name} Â· Sales: {o.sales_name}</p>
+                    <p className="text-xs text-brand-gray-mid">Supplier: {o.supplier_name} · Sales: {o.sales_name}</p>
                   </div>
                   <div className="text-xs text-brand-gray-mid">{o.items.length} item</div>
                   <div className="text-sm font-bold text-brand-black w-32">{formatCurrency(o.total_amount)}</div>
@@ -377,7 +377,7 @@ export default function BillingPage() {
                   <div key={o.id} className="p-4 flex flex-col md:flex-row md:items-center gap-3">
                     <div className="flex-1 min-w-[180px]">
                       <p className="text-sm font-bold text-brand-black">{o.order_code}</p>
-                      <p className="text-xs text-brand-gray-mid">Supplier: {o.supplier_name} Â· {formatDate(o.created_at)}</p>
+                      <p className="text-xs text-brand-gray-mid">Supplier: {o.supplier_name} · {formatDate(o.created_at)}</p>
                     </div>
                     <div className="text-sm font-bold text-brand-black w-32">{formatCurrency(o.total_amount)}</div>
                     {orderStatusBadge(o.status)}
@@ -391,7 +391,7 @@ export default function BillingPage() {
           <Modal
             open={!!orderTarget}
             onClose={() => setOrderTarget(null)}
-            title={orderTarget ? `Buat Invoice â€” ${orderTarget.order_code}` : "Buat Invoice"}
+            title={orderTarget ? `Buat Invoice — ${orderTarget.order_code}` : "Buat Invoice"}
             size="lg"
             footer={
               <>
@@ -422,10 +422,10 @@ export default function BillingPage() {
                       <div key={i} className="grid grid-cols-12 gap-3 p-3 bg-brand-bg rounded-xl items-end">
                         <div className="col-span-6">
                           <p className="text-xs font-semibold text-brand-black">{it.product_name}</p>
-                          <p className="text-[10px] text-brand-gray-light">{it.sku} Â· Modal {formatCurrency(it.cost_price)}</p>
+                          <p className="text-[10px] text-brand-gray-light">{it.sku} · Modal {formatCurrency(it.cost_price)}</p>
                         </div>
                         <div className="col-span-2">
-                          <p className="text-xs font-bold text-brand-black">Ã— {it.quantity}</p>
+                          <p className="text-xs font-bold text-brand-black">× {it.quantity}</p>
                         </div>
                         <div className="col-span-4">
                           <Input

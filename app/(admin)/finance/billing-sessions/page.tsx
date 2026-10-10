@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -45,7 +45,7 @@ export default function BillingSessionsPage() {
           total,
           paid,
           outstanding,
-          session_code: sessCodes || "â€”",
+          session_code: sessCodes || "—",
           session_id: sess[0]?.id ?? "",
           deliverable: outstanding > 0,
         };
@@ -140,7 +140,7 @@ export default function BillingSessionsPage() {
               />
               <div className="flex-1">
                 <p className="text-sm font-bold text-brand-black">{r.name}</p>
-                <p className="text-[10px] text-brand-gray-light">{r.invoices} invoice Â· {r.session_code || "Belum ada sesi"}</p>
+                <p className="text-[10px] text-brand-gray-light">{r.invoices} invoice · {r.session_code || "Belum ada sesi"}</p>
               </div>
               <span className="w-16 text-right text-xs font-semibold text-brand-gray-mid">{r.invoices}</span>
               <span className="w-28 text-right text-xs font-bold text-brand-black">{formatCurrency(r.total)}</span>

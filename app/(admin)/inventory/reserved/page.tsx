@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -46,7 +46,7 @@ export default function ReservedStockPage() {
           <ShoppingCart className="w-4 h-4 text-brand-black mt-0.5 flex-shrink-0" />
           <p className="text-xs text-brand-gray-dark">
             Saat invoice dibuat, barang masuk <strong>reserved</strong> agar tidak dijual dua kali.
-            Saat dikirim, reserved dilepas dan fisik berkurang. Invoice batal â†’ reserved kembali.
+            Saat dikirim, reserved dilepas dan fisik berkurang. Invoice batal → reserved kembali.
           </p>
         </div>
       </div>

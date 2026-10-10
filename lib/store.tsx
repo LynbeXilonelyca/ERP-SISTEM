@@ -25,6 +25,8 @@ import type {
   CommissionTransaction,
   BillingSession,
   PriceChangeRequest,
+  Employee,
+  ShippingRoute,
   AppSettings,
   AuditLog,
   Notification,
@@ -42,11 +44,14 @@ import {
   seedPayments,
   seedPurchases,
   seedOrders,
+  seedEmployees,
+  seedShippingRoutes,
   seedCommissions,
   seedMovements,
   seedSettings,
   seedAuditLogs,
   seedNotifications,
+  seedPriceChangeRequests,
 } from "./seed";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +68,8 @@ type DB = {
   payments: Payment[];
   purchases: PurchaseRequest[];
   orders: SalesOrder[];
+  employees: Employee[];
+  shipping_routes: ShippingRoute[];
   commissions: CommissionTransaction[];
   billing_sessions: BillingSession[];
   price_change_requests: PriceChangeRequest[];
@@ -72,7 +79,7 @@ type DB = {
   notifications: Notification[];
 };
 
-const STORAGE_KEY = "erp_admin_db_v3";
+const STORAGE_KEY = "erp_admin_db_v8";
 
 export type ToastItem = {
   id: string;
@@ -113,9 +120,11 @@ const initialDB: DB = {
   payments: seedPayments,
   purchases: seedPurchases,
   orders: seedOrders,
+  employees: seedEmployees,
+  shipping_routes: seedShippingRoutes,
   commissions: seedCommissions,
   billing_sessions: [],
-  price_change_requests: [],
+  price_change_requests: seedPriceChangeRequests,
   settings: seedSettings,
   movements: seedMovements,
   auditLogs: seedAuditLogs,

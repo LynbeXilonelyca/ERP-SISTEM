@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -184,7 +184,7 @@ export default function CustomersPage() {
       render: (_: unknown, row: typeof paginated[0]) => (
         <div>
           <p className="text-xs font-bold text-brand-black">{row.store_name}</p>
-          <p className="text-[10px] text-brand-gray-light">{row.customer_code} Â· {row.owner_name}</p>
+          <p className="text-[10px] text-brand-gray-light">{row.customer_code} · {row.owner_name}</p>
         </div>
       ),
     },
@@ -196,7 +196,7 @@ export default function CustomersPage() {
     {
       key: "city",
       label: "Kota",
-      render: (v: unknown) => <span className="text-xs text-brand-gray-dark">{String(v || "â€”")}</span>,
+      render: (v: unknown) => <span className="text-xs text-brand-gray-dark">{String(v || "—")}</span>,
     },
     {
       key: "customer_type",
@@ -222,7 +222,7 @@ export default function CustomersPage() {
       label: "Credit Limit",
       render: (v: unknown) => (
         <span className="text-xs text-brand-gray-dark">
-          {Number(v) > 0 ? formatCurrency(Number(v)) : "â€”"}
+          {Number(v) > 0 ? formatCurrency(Number(v)) : "—"}
         </span>
       ),
     },

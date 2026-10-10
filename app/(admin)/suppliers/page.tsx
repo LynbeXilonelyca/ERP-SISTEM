@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -111,7 +111,7 @@ export default function SuppliersPage() {
       render: (_: unknown, row: typeof paginated[0]) => (
         <div>
           <p className="text-xs font-bold text-brand-black">{row.name}</p>
-          <p className="text-[10px] text-brand-gray-light">{row.supplier_code} Â· {row.contact_person}</p>
+          <p className="text-[10px] text-brand-gray-light">{row.supplier_code} · {row.contact_person}</p>
         </div>
       ),
     },
@@ -121,7 +121,7 @@ export default function SuppliersPage() {
         {row.email && <p className="text-[10px] text-brand-gray-light">{row.email}</p>}
       </div>
     ) },
-    { key: "address", label: "Alamat", render: (v: unknown) => <span className="text-xs text-brand-gray-dark truncate block max-w-[220px]">{String(v || "â€”")}</span> },
+    { key: "address", label: "Alamat", render: (v: unknown) => <span className="text-xs text-brand-gray-dark truncate block max-w-[220px]">{String(v || "—")}</span> },
     {
       key: "status",
       label: "Status",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -119,13 +119,13 @@ export default function InventoryPage() {
     });
     notify({
       title: "Stok Disesuaikan",
-      message: `${adjustItem.product_name} â€” ${
+      message: `${adjustItem.product_name} — ${
         adjType === "RETURN_DAMAGED"
           ? "masuk rusak"
           : qty > 0
           ? "stok masuk"
           : "stok keluar"
-      } ${absQty}${adjNote ? ` Â· ${adjNote}` : ""}.`,
+      } ${absQty}${adjNote ? ` · ${adjNote}` : ""}.`,
       type: "SUCCESS",
     });
     setAdjustItem(null);
@@ -183,7 +183,7 @@ export default function InventoryPage() {
             Number(v) > 0 ? "text-purple-600" : "text-brand-gray-light"
           }`}
         >
-          {Number(v) > 0 ? String(v) : "â€”"}
+          {Number(v) > 0 ? String(v) : "—"}
         </span>
       ),
     },
@@ -196,7 +196,7 @@ export default function InventoryPage() {
             Number(v) > 0 ? "text-red-500" : "text-brand-gray-light"
           }`}
         >
-          {Number(v) > 0 ? String(v) : "â€”"}
+          {Number(v) > 0 ? String(v) : "—"}
         </span>
       ),
     },
@@ -248,14 +248,14 @@ export default function InventoryPage() {
         <p className="text-xs font-bold text-brand-black mb-2">Formula Stok</p>
         <div className="flex flex-wrap gap-3 text-xs text-brand-gray-dark">
           <span>
-            <strong className="text-brand-black">Available</strong> = Physical âˆ’ Reserved
+            <strong className="text-brand-black">Available</strong> = Physical - Reserved
           </span>
           <span className="text-brand-gray-border">|</span>
-          <span>Saat invoice dibuat â†’ Reserved +Qty</span>
+          <span>Saat invoice dibuat → Reserved +Qty</span>
           <span className="text-brand-gray-border">|</span>
-          <span>Saat dikirim â†’ Physical âˆ’Qty, Reserved âˆ’Qty</span>
+          <span>Saat dikirim → Physical -Qty, Reserved -Qty</span>
           <span className="text-brand-gray-border">|</span>
-          <span>Invoice batal â†’ Reserved kembali</span>
+          <span>Invoice batal → Reserved kembali</span>
         </div>
       </div>
 
@@ -334,11 +334,11 @@ export default function InventoryPage() {
                 {adjustItem.product_name}
               </p>
               <p className="text-[10px] text-brand-gray-light mt-0.5">
-                {adjustItem.sku} Â· Stok fisik:{" "}
+                {adjustItem.sku} · Stok fisik:{" "}
                 <span className="font-semibold text-brand-gray-dark">
                   {adjustItem.physical_stock}
                 </span>{" "}
-                Â· Rusak:{" "}
+                · Rusak:{" "}
                 <span className="font-semibold text-brand-gray-dark">
                   {adjustItem.damaged_stock}
                 </span>
@@ -357,7 +357,7 @@ export default function InventoryPage() {
                 onClick={() => quickFill("minus")}
                 className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
               >
-                âˆ’ Kurangi
+                - Kurangi
               </button>
               <button
                 onClick={() => quickFill("broken")}

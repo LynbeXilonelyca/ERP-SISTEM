@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -61,7 +61,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between mb-4">
           <p className="section-title">Pengaturan Bisnis</p>
           <Button variant="secondary" icon={<Save className="w-4 h-4" />} onClick={saveSettings}>
-            {saved ? "Tersimpan âœ“" : "Simpan"}
+            {saved ? "Tersimpan ✓" : "Simpan"}
           </Button>
         </div>
 

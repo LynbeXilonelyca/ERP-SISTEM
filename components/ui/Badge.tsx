@@ -69,14 +69,30 @@ export function PurchaseStatusBadge({ status }: { status: string }) {
     APPROVED: "success",
     REJECTED: "danger",
   };
-  return <Badge variant={map[status] ?? "default"}>{status}</Badge>;
+  return <Badge variant={map[status] ?? "default"}>{status.replace(/_/g, " ")}</Badge>;
+}
+
+export function DeliveryProofBadge({ status }: { status?: string }) {
+  if (!status) return null;
+  const map: Record<string, BadgeVariant> = {
+    PENDING: "warning",
+    VERIFIED: "success",
+    REJECTED: "danger",
+  };
+  const label: Record<string, string> = {
+    PENDING: "Bukti Menunggu Cek",
+    VERIFIED: "Bukti Terverifikasi",
+    REJECTED: "Bukti Ditolak",
+  };
+  return <Badge variant={map[status] ?? "default"}>{label[status] ?? status}</Badge>;
 }
 
 export function SessionStatusBadge({ status }: { status: string }) {
   const map: Record<string, BadgeVariant> = {
     ACTIVE: "success",
-    PENDING_REVIEW: "warning",
-    DONE: "info",
+    SUBMITTED: "warning",
+    REVIEWED: "info",
+    APPROVED: "success",
     CANCELLED: "danger",
   };
   return <Badge variant={map[status] ?? "default"}>{status.replace(/_/g, " ")}</Badge>;

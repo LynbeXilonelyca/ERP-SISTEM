@@ -13,7 +13,6 @@ import {
   BadgeDollarSign,
   UserCog,
   Settings,
-  ClipboardCheck,
   ChevronDown,
   ChevronRight,
   BarChart3,
@@ -43,12 +42,6 @@ const navItems: NavItem[] = [
     roles: ["SUPER_ADMIN"],
   },
   {
-    label: "Approvals",
-    href: "/approvals",
-    icon: <ClipboardCheck className="w-4 h-4" />,
-    roles: ["SUPER_ADMIN"],
-  },
-  {
     label: "Sales Panel",
     href: "/sales/panel",
     icon: <BarChart3 className="w-4 h-4" />,
@@ -57,17 +50,15 @@ const navItems: NavItem[] = [
   {
     label: "Product",
     icon: <Package className="w-4 h-4" />,
-    roles: ["SUPER_ADMIN", "SALES_ADMIN", "PURCHASE_ADMIN"],
+    roles: ["SUPER_ADMIN", "SALES_ADMIN", "PURCHASE_ADMIN", "SALES", "FINANCE", "SHIPPING_ADMIN"],
     children: [
       { label: "Product List", href: "/products" },
       { label: "Categories", href: "/products/categories" },
       { label: "Brands", href: "/products/brands" },
-      { label: "Pricing", href: "/products/pricing" },
-      { label: "Price History", href: "/products/price-history" },
     ],
   },
   {
-    label: "Inventory",
+    label: "Stock Report",
     icon: <Boxes className="w-4 h-4" />,
     roles: ["SUPER_ADMIN", "SALES_ADMIN", "PURCHASE_ADMIN"],
     children: [
@@ -84,13 +75,19 @@ const navItems: NavItem[] = [
     roles: ["SUPER_ADMIN", "SALES_ADMIN"],
   },
   {
+    label: "Karyawan",
+    href: "/employees",
+    icon: <UserCog className="w-4 h-4" />,
+    roles: ["SUPER_ADMIN", "SALES_ADMIN", "SHIPPING_ADMIN"],
+  },
+  {
     label: "Sales",
     icon: <FileText className="w-4 h-4" />,
     roles: ["SUPER_ADMIN", "SALES_ADMIN", "FINANCE"],
     children: [
       { label: "Invoices", href: "/sales/invoices" },
-      { label: "Sales Sessions", href: "/sales/sessions" },
-      { label: "Sales Report", href: "/sales/reports" },
+      { label: "History", href: "/sales/sessions" },
+      { label: "Approval", href: "/sales/reports" },
     ],
   },
   {
@@ -100,6 +97,7 @@ const navItems: NavItem[] = [
     children: [
       { label: "Purchase Requests", href: "/purchasing" },
       { label: "Approvals", href: "/purchasing/approvals" },
+      { label: "Cek Bukti", href: "/purchasing/proofs" },
       { label: "Suppliers", href: "/suppliers" },
     ],
   },
@@ -114,8 +112,7 @@ const navItems: NavItem[] = [
     roles: ["SUPER_ADMIN", "FINANCE"],
     children: [
       { label: "Buat & Print Tagihan", href: "/finance/billing" },
-      { label: "Sesi Tagihan", href: "/finance/billing-sessions" },
-      { label: "History Penagihan", href: "/finance/billing-history" },
+      { label: "Approval Session", href: "/finance/billing-history" },
       { label: "Payments", href: "/finance/payments" },
       { label: "Outstanding", href: "/finance/outstanding" },
     ],
@@ -163,7 +160,13 @@ const navItems: NavItem[] = [
 
 function NavGroup({ item }: { item: NavItem }) {
   const pathname = usePathname();
-  const isChildActive = item.children?.some((c) => pathname.startsWith(c.href));
+  const activeChild = (item.children ?? []).reduce<{ label: string; href: string } | undefined>((best, c) => {
+    const match = pathname === c.href || pathname.startsWith(c.href + "/");
+    if (!match) return best;
+    if (!best || c.href.length > best.href.length) return c;
+    return best;
+  }, undefined);
+  const isChildActive = !!activeChild;
   const [open, setOpen] = useState(isChildActive ?? false);
 
   return (
@@ -175,7 +178,7 @@ function NavGroup({ item }: { item: NavItem }) {
           isChildActive ? "sidebar-link-active" : "sidebar-link-inactive"
         )}
       >
-        <span className="flex items-center gap-3">
+        <span className="flex items-center gap-2">
           {item.icon}
           <span>{item.label}</span>
         </span>
@@ -188,7 +191,7 @@ function NavGroup({ item }: { item: NavItem }) {
       {open && (
         <div className="mt-0.5 ml-4 pl-4 border-l-2 border-brand-gray-border flex flex-col gap-0.5">
           {item.children?.map((child) => {
-            const active = pathname === child.href || pathname.startsWith(child.href + "/");
+            const active = activeChild?.href === child.href;
             return (
               <Link
                 key={child.href}
@@ -219,21 +222,14 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
   const { user } = useAuth();
   const role = user?.role ?? "SUPER_ADMIN";
 
-  const { invoices, purchases, sessions, price_change_requests, billing_sessions } = useData();
+  const { purchases, sessions, price_change_requests } = useData();
   const pendingApprovals = useMemo(
     () =>
-      invoices.filter((i) => i.invoice_status === "PENDING_SUPER").length +
       purchases.filter((p) => p.status === "SUBMITTED").length +
       price_change_requests.filter((r) => r.status === "PENDING").length +
-      sessions.filter((s) => s.status === "PENDING_REVIEW").length +
-      billing_sessions.filter((b) => b.status === "PENDING" || b.status === "REVIEWED").length,
-    [invoices, purchases, sessions, price_change_requests, billing_sessions]
+      sessions.filter((s) => s.status === "SUBMITTED" || s.status === "REVIEWED").length,
+    [purchases, sessions, price_change_requests]
   );
-
-  const approvalsItem = navItems.find((i) => i.href === "/approvals");
-  if (approvalsItem) {
-    approvalsItem.badge = pendingApprovals > 0 ? pendingApprovals : undefined;
-  }
 
   const visible = navItems.filter((item) => {
     if (role === "SUPER_ADMIN") return true;

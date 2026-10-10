@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -16,10 +16,10 @@ export default function CommissionReportPage() {
     (c) => !search || c.sales_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const total = filtered.reduce((a, c) => a + (c.main_commission + c.own_brand_commission + c.sub_commission), 0);
+  const total = filtered.reduce((a, c) => a + c.total_commission, 0);
 
   const bySales = new Map<string, number>();
-  filtered.forEach((c) => bySales.set(c.sales_name, (bySales.get(c.sales_name) ?? 0) + c.main_commission + c.own_brand_commission + c.sub_commission));
+  filtered.forEach((c) => bySales.set(c.sales_name, (bySales.get(c.sales_name) ?? 0) + c.total_commission));
   const chartData = Array.from(bySales.entries()).map(([name, value]) => ({ name, value }));
 
   return (
@@ -59,9 +59,8 @@ export default function CommissionReportPage() {
               <tr className="border-b border-brand-gray-border">
                 <th className="table-head text-left py-3 px-4 bg-brand-bg">Invoice</th>
                 <th className="table-head text-left py-3 px-4 bg-brand-bg">Sales</th>
-                <th className="table-head text-left py-3 px-4 bg-brand-bg">Main</th>
-                <th className="table-head text-left py-3 px-4 bg-brand-bg">Own Brand</th>
-                <th className="table-head text-left py-3 px-4 bg-brand-bg">Sub</th>
+                <th className="table-head text-left py-3 px-4 bg-brand-bg">Merek Sendiri</th>
+                <th className="table-head text-left py-3 px-4 bg-brand-bg">Merek Lain</th>
                 <th className="table-head text-left py-3 px-4 bg-brand-bg">Total</th>
               </tr>
             </thead>
@@ -70,10 +69,9 @@ export default function CommissionReportPage() {
                 <tr key={c.id} className="border-b border-brand-gray-border last:border-0">
                   <td className="py-3 px-4 text-xs font-semibold text-brand-black">{c.invoice_number}</td>
                   <td className="py-3 px-4 text-xs text-brand-gray-dark">{c.sales_name}</td>
-                  <td className="py-3 px-4 text-xs">{formatCurrency(c.main_commission)}</td>
-                  <td className="py-3 px-4 text-xs text-blue-600">{c.own_brand_commission ? formatCurrency(c.own_brand_commission) : "â€”"}</td>
-                  <td className="py-3 px-4 text-xs text-purple-600">{c.sub_commission ? formatCurrency(c.sub_commission) : "â€”"}</td>
-                  <td className="py-3 px-4 text-xs font-bold text-green-600">{formatCurrency(c.main_commission + c.own_brand_commission + c.sub_commission)}</td>
+                  <td className="py-3 px-4 text-xs text-blue-600">{c.own_brand_commission ? formatCurrency(c.own_brand_commission) : "—"}</td>
+                  <td className="py-3 px-4 text-xs text-purple-600">{c.other_brand_commission ? formatCurrency(c.other_brand_commission) : "—"}</td>
+                  <td className="py-3 px-4 text-xs font-bold text-green-600">{formatCurrency(c.total_commission)}</td>
                 </tr>
               ))}
             </tbody>

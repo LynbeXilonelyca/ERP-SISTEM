@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -55,7 +55,7 @@ export default function StockReportPage() {
         <div className="flex flex-wrap items-center gap-3 p-4 border-b border-brand-gray-border">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari produk / SKU..." className="w-56" />
           <Select value={lowOnly} onChange={(e) => setLowOnly(e.target.value)} options={[{ value: "low", label: "Low Stock Only" }]} placeholder="Semua Stock" className="w-40" />
-          <span className="ml-auto text-xs text-brand-gray-light">{filtered.length} produk Â· {movements.length} pergerakan</span>
+          <span className="ml-auto text-xs text-brand-gray-light">{filtered.length} produk · {movements.length} pergerakan</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px]">
@@ -79,7 +79,7 @@ export default function StockReportPage() {
                   <td className="py-3 px-4 text-sm font-bold">{r.physical_stock}</td>
                   <td className="py-3 px-4 text-sm font-semibold text-blue-600">{r.reserved_stock}</td>
                   <td className={`py-3 px-4 text-sm font-bold ${r.available_stock <= r.warning_stock ? "text-orange-600" : "text-green-600"}`}>{r.available_stock}</td>
-                  <td className="py-3 px-4 text-sm font-semibold text-purple-600">{r.incoming_stock > 0 ? r.incoming_stock : "â€”"}</td>
+                  <td className="py-3 px-4 text-sm font-semibold text-purple-600">{r.incoming_stock > 0 ? r.incoming_stock : "—"}</td>
                   <td className="py-3 px-4">
                     {r.available_stock === 0 ? (
                       <span className="badge bg-red-100 text-red-700">OUT OF STOCK</span>

@@ -13,7 +13,7 @@ const demoAccounts = [
   { role: "SHIPPING_ADMIN", label: "Admin Pengiriman", email: "pengiriman@erp.com", color: "bg-orange-100 text-orange-700" },
   { role: "FINANCE", label: "Finance", email: "finance@erp.com", color: "bg-blue-100 text-blue-700" },
   { role: "PURCHASE_ADMIN", label: "Admin Pembelian", email: "pembelian@erp.com", color: "bg-purple-100 text-purple-700" },
-  { role: "SALES", label: "Sales (Mobile)", email: "andi@erp.com", color: "bg-red-100 text-red-700" },
+  { role: "SALES", label: "Sales (Mobile)", email: "nopal@erp.com", color: "bg-red-100 text-red-700" },
 ];
 
 export default function LoginPage() {

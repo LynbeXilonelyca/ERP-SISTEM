@@ -10,6 +10,7 @@ const statusRowColor: Record<string, string> = {
   REJECTED: "bg-red-50",
   PENDING: "bg-yellow-50",
   PENDING_REVIEW: "bg-yellow-50",
+  REVIEWED: "bg-sky-50",
   ACTIVE: "bg-green-50",
   INACTIVE: "bg-gray-50",
   DONE: "bg-blue-50",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -40,10 +40,10 @@ export default function LowStockPage() {
         </span>
       ),
     },
-    { key: "warning_stock", label: "Warning Level", render: (v: unknown) => <span className="text-xs text-brand-gray-mid">â‰¤ {String(v)}</span> },
+    { key: "warning_stock", label: "Warning Level", render: (v: unknown) => <span className="text-xs text-brand-gray-mid">≤ {String(v)}</span> },
     { key: "incoming_stock", label: "Incoming", render: (v: unknown) => (
       <span className={`text-xs font-semibold ${Number(v) > 0 ? "text-purple-600" : "text-brand-gray-light"}`}>
-        {Number(v) > 0 ? `${v} unit` : "â€”"}
+        {Number(v) > 0 ? `${v} unit` : "—"}
       </span>
     ) },
   ];

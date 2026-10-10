@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -33,8 +33,7 @@ export default function CommissionSettlementPage() {
   const [status, setStatus] = useState<Record<string, CommissionStatus>>({});
   const [approveAll, setApproveAll] = useState(false);
 
-  const calcCommission = (c: (typeof commissions)[0]) =>
-    c.main_commission + c.own_brand_commission + c.sub_commission;
+  const calcCommission = (c: (typeof commissions)[0]) => c.total_commission;
 
   const totalPending = commissions.reduce((a, c) => a + calcCommission(c), 0);
 
@@ -168,7 +167,7 @@ export default function CommissionSettlementPage() {
                     <td className="py-3 px-4 text-xs font-semibold text-brand-black">{a.invoice_number}</td>
                     <td className="py-3 px-4 text-xs text-brand-gray-dark">{a.sales_name}</td>
                     <td className="py-3 px-4 text-xs font-bold text-red-500">- {formatCurrency(a.amount)}</td>
-                    <td className="py-3 px-4 text-xs text-brand-gray-mid">{a.reason || "â€”"}</td>
+                    <td className="py-3 px-4 text-xs text-brand-gray-mid">{a.reason || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -198,7 +197,7 @@ export default function CommissionSettlementPage() {
             label="Invoice / Komisi"
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
-            options={commissions.map((c) => ({ value: c.id, label: `${c.invoice_number} â€” ${c.sales_name}` }))}
+            options={commissions.map((c) => ({ value: c.id, label: `${c.invoice_number} — ${c.sales_name}` }))}
             placeholder="Pilih komisi"
           />
           <Select

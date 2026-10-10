@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -13,7 +13,7 @@ export default function FinanceReportPage() {
   const paid = payments.reduce((a, p) => a + (p.amount || 0), 0);
   const billed = invoices.filter((i) => i.invoice_status !== "CANCELLED").reduce((a, i) => a + i.total, 0);
   const outstanding = Math.max(0, billed - paid);
-  const commissionTotal = commissions.reduce((a, c) => a + (c.main_commission + c.own_brand_commission + c.sub_commission), 0);
+  const commissionTotal = commissions.reduce((a, c) => a + c.total_commission, 0);
 
   const pieData = [
     { name: "Terbayar", value: paid },

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -8,10 +8,13 @@ import { Table } from "@/components/ui/Table";
 import { InvoiceStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, downloadCSV } from "@/lib/utils";
 import { useData } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { TrendingUp, Banknote, Clock, FileText, Download } from "lucide-react";
 
 export default function SalesReportsPage() {
   const { invoices, payments, customers } = useData();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const [status, setStatus] = useState("ALL");
 
   const withPaid = invoices.map((inv) => {
@@ -83,12 +86,14 @@ export default function SalesReportsPage() {
         breadcrumbs={[{ label: "Home", href: "/dashboard" }, { label: "Sales" }, { label: "Reports" }]}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue" value={formatCurrency(revenue)} icon={<TrendingUp className="w-4 h-4" />} accent />
-        <StatCard title="Total Dibayar" value={formatCurrency(paid)} icon={<Banknote className="w-4 h-4" />} />
-        <StatCard title="Outstanding" value={formatCurrency(outstanding)} icon={<Clock className="w-4 h-4" />} />
-        <StatCard title="Invoice Aktif" value={String(withPaid.filter((i) => i.invoice_status !== "CANCELLED").length)} icon={<FileText className="w-4 h-4" />} />
-      </div>
+      {isSuperAdmin && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Revenue" value={formatCurrency(revenue)} icon={<TrendingUp className="w-4 h-4" />} accent />
+          <StatCard title="Total Dibayar" value={formatCurrency(paid)} icon={<Banknote className="w-4 h-4" />} />
+          <StatCard title="Outstanding" value={formatCurrency(outstanding)} icon={<Clock className="w-4 h-4" />} />
+          <StatCard title="Invoice Aktif" value={String(withPaid.filter((i) => i.invoice_status !== "CANCELLED").length)} icon={<FileText className="w-4 h-4" />} />
+        </div>
+      )}
 
       <div className="card p-4">
         <div className="flex items-center justify-between mb-3">

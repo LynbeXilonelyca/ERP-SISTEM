@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -182,7 +182,7 @@ export default function InvoicesPage() {
             </button>
           )}
           <span className="ml-auto text-xs text-brand-gray-light">
-            {filtered.length} invoice Â· {formatCurrency(filtered.reduce((a, inv) => a + inv.total, 0))}
+            {filtered.length} invoice · {formatCurrency(filtered.reduce((a, inv) => a + inv.total, 0))}
           </span>
         </div>
         <Table
@@ -207,7 +207,7 @@ export default function InvoicesPage() {
       <Modal
         open={!!detail}
         onClose={() => setDetail(null)}
-        title={`Detail Invoice â€” ${detailInvoice?.invoice_number ?? ""}`}
+        title={`Detail Invoice — ${detailInvoice?.invoice_number ?? ""}`}
         size="lg"
         footer={
           <Button variant="secondary" onClick={() => setDetail(null)}>

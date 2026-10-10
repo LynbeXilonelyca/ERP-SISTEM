@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -26,8 +26,7 @@ export default function CommissionAdjustmentsPage() {
   const [search, setSearch] = useState("");
   const [adjustments, setAdjustments] = useState<Adj[]>([]);
 
-  const calc = (c: (typeof commissions)[0]) =>
-    c.main_commission + c.own_brand_commission + c.sub_commission;
+  const calc = (c: (typeof commissions)[0]) => c.total_commission;
 
   const demoRows: Adj[] = [
     {
@@ -58,7 +57,7 @@ export default function CommissionAdjustmentsPage() {
           <RotateCcw className="w-4 h-4 text-brand-black mt-0.5 flex-shrink-0" />
           <p className="text-xs text-brand-gray-dark">
             Model <strong>adjustment tidak menghapus komisi lama</strong>. History tetap utuh:
-            Original âˆ’ Adjustment = Final. Audit tetap jelas.
+            Original - Adjustment = Final. Audit tetap jelas.
           </p>
         </div>
       </div>

@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/ui/Input";
-import { Badge, InvoiceStatusBadge } from "@/components/ui/Badge";
+import { Badge, InvoiceStatusBadge, DeliveryProofBadge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { formatCurrency, formatDate, isCustomerCutOff, marginInfo, cn } from "@/lib/utils";
 import { useData } from "@/lib/store";
@@ -26,6 +26,7 @@ import {
   Wallet,
   Send,
   AlertTriangle,
+  Camera,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -86,7 +87,7 @@ export default function SalesPanelPage() {
   const isAdmin = role === "SALES_ADMIN";
   const canCreate = role === "SALES" || role === "SALES_ADMIN";
 
-  // â”€â”€ Orderan (jalur purchase â†’ sales â†’ finance) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Orderan (jalur purchase → sales → finance) ---
   const myOrders = useMemo(() => {
     const base = role === "SALES" ? orders.filter((o) => o.sales_id === myId) : orders;
     return [...base].sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -98,7 +99,7 @@ export default function SalesPanelPage() {
       orders: db.orders.map((x) => (x.id === o.id ? { ...x, status: "APPROVED_BY_SALES" as const } : x)),
     }));
     addAudit({ user_name: myName, user_role: role, action: "APPROVE", module: "ORDER", record_id: o.order_code, old_value: "AWAITING_SALES", new_value: "APPROVED_BY_SALES", ip_address: "local", device: "Web" });
-    notify({ title: "Orderan Diterima", message: `${myName} mengonfirmasi barang ${o.order_code} (${o.supplier_name}) tersedia â€” diteruskan ke Finance.`, type: "SUCCESS", target_role: "FINANCE" });
+    notify({ title: "Orderan Diterima", message: `${myName} mengonfirmasi barang ${o.order_code} (${o.supplier_name}) tersedia — diteruskan ke Finance.`, type: "SUCCESS", target_role: "FINANCE" });
   };
 
   const rejectOrder = (o: (typeof orders)[number]) => {
@@ -107,12 +108,12 @@ export default function SalesPanelPage() {
       orders: db.orders.map((x) => (x.id === o.id ? { ...x, status: "REJECTED_BY_SALES" as const } : x)),
     }));
     addAudit({ user_name: myName, user_role: role, action: "REJECT", module: "ORDER", record_id: o.order_code, old_value: "AWAITING_SALES", new_value: "REJECTED_BY_SALES", ip_address: "local", device: "Web" });
-    notify({ title: "Orderan Ditolak Sales", message: `${myName} melaporkan barang ${o.order_code} (${o.supplier_name}) tidak tersedia â€” menunggu tindakan lanjut.`, type: "ERROR", target_role: "PURCHASE_ADMIN" });
+    notify({ title: "Orderan Ditolak Sales", message: `${myName} melaporkan barang ${o.order_code} (${o.supplier_name}) tidak tersedia — menunggu tindakan lanjut.`, type: "ERROR", target_role: "PURCHASE_ADMIN" });
   };
 
   const [tab, setTab] = useState<Tab>(canCreate ? "buat" : "approve");
 
-  // â”€â”€ State untuk Buat Invoice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- State untuk Buat Invoice ---
   const [targetSalesId, setTargetSalesId] = useState(myId);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedTerm, setSelectedTerm] = useState("");
@@ -122,20 +123,22 @@ export default function SalesPanelPage() {
   const [discount, setDiscount] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // â”€â”€ State untuk proses persetujuan pipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- State untuk proses persetujuan pipeline ---
   const [curId, setCurId] = useState("");
   const [changeNote, setChangeNote] = useState("");
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
 
-  // â”€â”€ State untuk SHIPPING_ADMIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- State untuk SHIPPING_ADMIN ---
   const [shippingDate, setShippingDate] = useState("");
   const [returOpen, setReturOpen] = useState(false);
   const [returReason, setReturReason] = useState("");
+  const [proofPhoto, setProofPhoto] = useState("");
+  const [proofNote, setProofNote] = useState("");
 
-  // â”€â”€ State untuk FINANCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- State untuk FINANCE ---
   const [financeNote, setFinanceNote] = useState("");
 
-  // â”€â”€ Sales aktif â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Sales aktif ---
   const salesUsers = useMemo(
     () =>
       users
@@ -174,6 +177,9 @@ export default function SalesPanelPage() {
 
   const productOf = (id: string) => activeProducts.find((p) => p.id === id);
   const priceFor = (product: Product, term: string) => {
+    const custType = selectedCust?.customer_type;
+    if (custType === "RESELLER" && product.freelance_price) return product.freelance_price;
+    if (custType === "DISTRIBUTOR" && product.distributor_price) return product.distributor_price;
     const price = product.prices.find((p) => p.payment_term_id === term);
     return price?.price ?? product.prices[0]?.price ?? 0;
   };
@@ -261,7 +267,7 @@ export default function SalesPanelPage() {
     setSelectedCustomer("");
   };
 
-  // â”€â”€ Pipeline per role â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Pipeline per role ---
   const awaitingStatus = AWAITING[role] ?? "";
   const awaitingInvoices = useMemo(() => {
     if (!awaitingStatus) return [];
@@ -274,7 +280,7 @@ export default function SalesPanelPage() {
   const curTerm =
     curInvoice?.items?.[0]?.payment_term ?? curInvoice?.payment_term_id ?? "";
 
-  // Editor item (Sales Admin) â€” muat ulang saat invoice dipilih
+  // Editor item (Sales Admin) — muat ulang saat invoice dipilih
   const [reviewItems, setReviewItems] = useState<InvoiceItem[]>([]);
   const [reviewDiscount, setReviewDiscount] = useState(0);
   const [addProductId, setAddProductId] = useState("");
@@ -293,6 +299,8 @@ export default function SalesPanelPage() {
     }
     setAddProductId("");
     setShippingDate(inv?.shipping_date ?? "");
+    setProofPhoto("");
+    setProofNote("");
     setFinanceNote("");
   };
 
@@ -412,19 +420,100 @@ export default function SalesPanelPage() {
     approveFromSalesAdmin();
   };
 
+  const handleProofFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      notify({ title: "Foto Terlalu Besar", message: "Ukuran maksimal 5 MB.", type: "ERROR" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const raw = reader.result as string;
+      const img = new Image();
+      img.src = raw;
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX) {
+          height = Math.round((height * MAX) / width);
+          width = MAX;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setProofPhoto(raw);
+          return;
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        setProofPhoto(canvas.toDataURL("image/jpeg", 0.8));
+      };
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const submitShipping = () => {
     if (!curInvoice) return;
     setDB((db) => ({
       ...db,
       invoices: db.invoices.map((inv) =>
         inv.id === curInvoice.id
-          ? { ...inv, shipping_date: shippingDate, invoice_status: "PENDING_FINANCE" as const, updated_at: new Date().toISOString() }
+          ? {
+              ...inv,
+              shipping_date: shippingDate,
+              invoice_status: "PENDING_FINANCE" as const,
+              ...(proofPhoto
+                ? {
+                    delivery_proof_url: proofPhoto,
+                    delivery_proof_by: myName,
+                    delivery_proof_at: new Date().toISOString(),
+                    delivery_proof_status: "PENDING" as const,
+                    delivery_proof_checked_by: undefined,
+                    delivery_proof_checked_at: undefined,
+                    delivery_proof_note: proofNote || undefined,
+                  }
+                : {}),
+              updated_at: new Date().toISOString(),
+            }
           : inv
       ),
     }));
-    notify({ title: "Tanggal Dikirim", message: `${curInvoice.invoice_number} dikirim ke Finance.`, type: "SUCCESS" });
+    addAudit({
+      user_name: myName,
+      user_role: role,
+      action: proofPhoto ? "SEND_PROOF" : "SHIP",
+      module: "INVOICE",
+      record_id: curInvoice.invoice_number,
+      old_value: "PENDING_SHIPPING",
+      new_value: proofPhoto ? "PENDING_FINANCE (bukti dikirim)" : "PENDING_FINANCE",
+      ip_address: "local",
+      device: "Web",
+    });
+    notify({
+      title: proofPhoto ? "Bukti Dikirim" : "Tanggal Dikirim",
+      message: proofPhoto
+        ? `${curInvoice.invoice_number} dikirim ke Finance. Foto bukti terupload — menunggu cek Admin Pembelian.`
+        : `${curInvoice.invoice_number} dikirim ke Finance.`,
+      type: "SUCCESS",
+      target_role: proofPhoto ? "PURCHASE_ADMIN" : undefined,
+    });
+    if (proofPhoto) {
+      notify({
+        title: "Bukti Perlu Dicek",
+        message: `Ada foto bukti pengiriman ${curInvoice.invoice_number} dari ${myName}.`,
+        type: "INFO",
+        target_role: "FINANCE",
+      });
+    }
     setCurId("");
     setShippingDate("");
+    setProofPhoto("");
+    setProofNote("");
   };
 
   const createRetur = () => {
@@ -453,7 +542,7 @@ export default function SalesPanelPage() {
   };
   const returCount = invoices.filter((i) => i.invoice_number.startsWith("RET-")).length + 1;
 
-  // â”€â”€ Sesi per Bulan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Sesi per Bulan ---
   const sessionRows = useMemo(() => {
     const map = new Map<string, { month: string; revenue: number; invoices: number; commission: number; sessions: typeof mySessions }>();
     mySessions.forEach((s) => {
@@ -470,7 +559,7 @@ export default function SalesPanelPage() {
 
   const totalCommission = mySessions.reduce((a, s) => a + (s.total_commission || 0), 0);
 
-  // â”€â”€ Progress & Perbandingan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Progress & Perbandingan ---
   const nowK = monthKey(new Date().toISOString());
   const thisRevenue = myInvoices
     .filter((i) => monthKey(i.created_at) === nowK && isCountable(i.invoice_status))
@@ -496,7 +585,7 @@ export default function SalesPanelPage() {
       }));
   }, [myInvoices]);
 
-  // â”€â”€ Monitoring (SALES_ADMIN) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Monitoring (SALES_ADMIN) ---
   const monitorRows = useMemo(() => {
     return salesUsers.map((su) => {
       const inv = invoices.filter((i) => i.sales_id === su.id && (i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED"));
@@ -611,7 +700,7 @@ export default function SalesPanelPage() {
                 }}
                 options={myCustomers.map((c) => ({
                   value: c.id,
-                  label: `${c.store_name} â€” ${c.city}`,
+                  label: `${c.store_name} — ${c.city}`,
                 }))}
               />
               <Select
@@ -628,7 +717,7 @@ export default function SalesPanelPage() {
                 <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-red-600">Customer ini sedang kena Cut Off.</p>
-                  <p className="text-[10px] text-red-500">Pembuatan invoice diblokir karena ada piutang yang belum lunas melewati tenggat {settings.cut_off_days} hari. Minta Super Admin lakukan pembayaran terlebih dahulu.</p>
+                  <p className="text-[10px] text-red-500">Pembuatan invoice diblokir karena ada piutang yang belum lunas melewati jatuh tempo. Minta Super Admin lakukan pembayaran terlebih dahulu.</p>
                 </div>
               </div>
             )}
@@ -654,7 +743,7 @@ export default function SalesPanelPage() {
                           onChange={(e) => updateLine(idx, { productId: e.target.value })}
                           options={activeProducts.map((pr) => ({
                             value: pr.id,
-                            label: `${pr.name} â€” ${formatCurrency(priceFor(pr, selectedTerm))}`,
+                            label: `${pr.name} — ${formatCurrency(priceFor(pr, selectedTerm))}`,
                           }))}
                         />
                         <Input
@@ -675,7 +764,7 @@ export default function SalesPanelPage() {
                         <p className={cn("text-[10px] font-semibold flex items-center gap-1",
                           margin.level === "danger" ? "text-red-500" : margin.level === "warning" ? "text-orange-500" : "text-green-600")}>
                           {margin.level === "danger" ? <XCircle className="w-3 h-3" /> : margin.level === "warning" ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                          Harga modal {formatCurrency(p!.cost_price)} Â· {margin.message}
+                          Harga modal {formatCurrency(p!.cost_price)} · {margin.message}
                         </p>
                       )}
                     </div>
@@ -749,7 +838,7 @@ export default function SalesPanelPage() {
                   <div>
                     <p className="text-sm font-bold text-brand-black">{inv.invoice_number}</p>
                     <p className="text-xs text-brand-gray-light mt-0.5">
-                      {inv.store_name} Â· {salesUsers.find((u) => u.id === inv.sales_id)?.name ?? inv.sales_name}
+                      {inv.store_name} · {salesUsers.find((u) => u.id === inv.sales_id)?.name ?? inv.sales_name}
                     </p>
                     <p className="text-[10px] text-brand-gray-light">{formatDate(inv.created_at)}</p>
                   </div>
@@ -779,7 +868,7 @@ export default function SalesPanelPage() {
                   <div>
                     <p className="section-title">{curInvoice.invoice_number}</p>
                     <p className="text-xs text-brand-gray-light mt-0.5">
-                      {curInvoice.store_name} Â· {curInvoice.payment_term_label}
+                      {curInvoice.store_name} · {curInvoice.payment_term_label}
                     </p>
                   </div>
                   <InvoiceStatusBadge status={curInvoice.invoice_status} />
@@ -801,6 +890,29 @@ export default function SalesPanelPage() {
                   </div>
                 )}
 
+                {curInvoice.delivery_proof_url && role !== "SHIPPING_ADMIN" && (
+                  <div className="border border-brand-gray-border rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-brand-black">Bukti Pengiriman (Foto)</p>
+                      <DeliveryProofBadge status={curInvoice.delivery_proof_status} />
+                    </div>
+                    <img
+                      src={curInvoice.delivery_proof_url}
+                      alt="Bukti pengiriman"
+                      className="w-full max-h-64 object-contain rounded-lg bg-white border border-brand-gray-border"
+                    />
+                    <p className="text-[10px] text-brand-gray-light">
+                      Diunggah {curInvoice.delivery_proof_by} · {curInvoice.delivery_proof_at ? formatDate(curInvoice.delivery_proof_at) : "-"}
+                      {curInvoice.delivery_proof_status === "VERIFIED" && curInvoice.delivery_proof_checked_by
+                        ? ` · Dicek ${curInvoice.delivery_proof_checked_by}`
+                        : ""}
+                    </p>
+                    {curInvoice.delivery_proof_note && (
+                      <p className="text-[10px] text-brand-gray-mid italic">"{curInvoice.delivery_proof_note}"</p>
+                    )}
+                  </div>
+                )}
+
                 {role === "SALES_ADMIN" && (
                   <>
                     <div className="flex gap-2 items-end">
@@ -811,7 +923,7 @@ export default function SalesPanelPage() {
                         onChange={(e) => setAddProductId(e.target.value)}
                         options={activeProducts.map((p) => ({
                           value: p.id,
-                          label: `${p.name} â€” ${formatCurrency(p.prices.find((pp) => pp.payment_term_id === curTerm)?.price ?? p.prices[0]?.price ?? 0)}`,
+                          label: `${p.name} — ${formatCurrency(p.prices.find((pp) => pp.payment_term_id === curTerm)?.price ?? p.prices[0]?.price ?? 0)}`,
                         }))}
                       />
                       <Button variant="secondary" icon={<Plus className="w-4 h-4" />} onClick={addReviewItem} disabled={!addProductId}>
@@ -842,8 +954,8 @@ export default function SalesPanelPage() {
                     />
                     <p className="text-[10px] text-brand-gray-light">
                       {reviewUnchanged
-                        ? "Tanpa perubahan â€” invoice langsung ke Admin Pengiriman (tanpa persetujuan Super Admin)."
-                        : "Ada perubahan pada item/diskon â€” invoice akan diminta persetujuan Super Admin dulu sebelum ke Pengiriman."}
+                        ? "Tanpa perubahan — invoice langsung ke Admin Pengiriman (tanpa persetujuan Super Admin)."
+                        : "Ada perubahan pada item/diskon — invoice akan diminta persetujuan Super Admin dulu sebelum ke Pengiriman."}
                     </p>
                   </>
                 )}
@@ -859,7 +971,7 @@ export default function SalesPanelPage() {
                     <div className="bg-brand-bg rounded-xl p-3 text-xs space-y-1">
                       {curInvoice.items?.map((it) => (
                         <div key={it.id} className="flex justify-between">
-                          <span>{it.product_name} Ã— {it.quantity}</span>
+                          <span>{it.product_name} × {it.quantity}</span>
                           <span className="font-semibold">{formatCurrency(it.selling_price * it.quantity)}</span>
                         </div>
                       ))}
@@ -868,6 +980,48 @@ export default function SalesPanelPage() {
                         <span>{formatCurrency(curInvoice.total)}</span>
                       </div>
                     </div>
+
+                    <div className="border border-dashed border-brand-gray-border rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="form-label mb-0">Foto Bukti Pengiriman</p>
+                        <span className="text-[10px] text-brand-gray-light">Maks 5 MB</span>
+                      </div>
+                      {proofPhoto ? (
+                        <div className="space-y-2">
+                          <img src={proofPhoto} alt="Bukti pengiriman" className="w-full max-h-56 object-contain rounded-lg bg-white border border-brand-gray-border" />
+                          <div className="flex justify-end">
+                            <button onClick={() => setProofPhoto("")} className="text-[10px] font-bold text-red-500 hover:underline">
+                              Ganti foto
+                            </button>
+                          </div>
+                        </div>
+                      ) : curInvoice.delivery_proof_url ? (
+                        <div className="space-y-1">
+                          <img src={curInvoice.delivery_proof_url} alt="Bukti pengiriman" className="w-full max-h-56 object-contain rounded-lg bg-white border border-brand-gray-border" />
+                          <p className="text-[10px] text-brand-gray-light">
+                            Terkirim oleh {curInvoice.delivery_proof_by} · {formatDate(curInvoice.delivery_proof_at ?? "")}
+                          </p>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center gap-1 py-6 cursor-pointer text-brand-gray-light hover:text-brand-black transition-colors">
+                          <Camera className="w-6 h-6" />
+                          <span className="text-xs font-semibold">Ambil / pilih foto bukti</span>
+                          <span className="text-[10px]">Barang sampai di customer</span>
+                          <input type="file" accept="image/*" onChange={handleProofFile} className="hidden" />
+                        </label>
+                      )}
+                      <Textarea
+                        label="Catatan Bukti (opsional)"
+                        placeholder="Contoh: barang diterima oleh Pak Rahmat, 2 sak utuh"
+                        value={proofNote}
+                        onChange={(e) => setProofNote(e.target.value)}
+                        className="min-h-[56px]"
+                      />
+                      <p className="text-[10px] text-brand-gray-light">
+                        Foto akan dikirim ke Admin Pembelian untuk dicek sebelum invoice diselesaikan Finance.
+                      </p>
+                    </div>
+
                     <Button variant="secondary" icon={<Package className="w-4 h-4" />} onClick={() => setReturOpen(true)}>
                       Buat Invoice Retur
                     </Button>
@@ -885,7 +1039,7 @@ export default function SalesPanelPage() {
                     <div className="bg-brand-bg rounded-xl p-3 text-xs space-y-1">
                       {curInvoice.items?.map((it) => (
                         <div key={it.id} className="flex justify-between">
-                          <span>{it.product_name} Ã— {it.quantity}</span>
+                          <span>{it.product_name} × {it.quantity}</span>
                           <span className="font-semibold">{formatCurrency(it.selling_price * it.quantity)}</span>
                         </div>
                       ))}
@@ -972,8 +1126,8 @@ export default function SalesPanelPage() {
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {row.sessions.map((s) => (
-                      <Badge key={s.id} variant={s.status === "ACTIVE" ? "yellow" : s.status === "DONE" ? "success" : "info"}>
-                        {s.session_code} Â· {s.status.replace(/_/g, " ")}
+                      <Badge key={s.id} variant={s.status === "ACTIVE" ? "yellow" : s.status === "APPROVED" ? "success" : "info"}>
+                        {s.session_code} · {s.status.replace(/_/g, " ")}
                       </Badge>
                     ))}
                   </div>
@@ -1017,7 +1171,7 @@ export default function SalesPanelPage() {
             <StatCard title="Komisi" value={formatCurrency(totalCommission)} subtitle="Semua sesi" icon={<BarChart3 className="w-4 h-4" />} />
           </div>
           <div className="card">
-            <p className="section-title mb-4">Progress & Perbandingan per Bulan â€” Invoice (semua status) & Revenue (terkonfirmasi)</p>
+            <p className="section-title mb-4">Progress & Perbandingan per Bulan — Invoice (semua status) & Revenue (terkonfirmasi)</p>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -1053,7 +1207,7 @@ export default function SalesPanelPage() {
                       <span className="text-sm font-bold text-brand-black">{m.name}</span>
                       <span className={`w-2 h-2 rounded-full ${m.active ? "bg-green-500" : "bg-brand-gray-light"}`} title={m.active ? "Ada sesi aktif" : "Tidak ada sesi aktif"} />
                     </div>
-                    <p className="text-xs text-brand-gray-light mt-0.5">{m.customers} customer Â· {m.sessions} sesi</p>
+                    <p className="text-xs text-brand-gray-light mt-0.5">{m.customers} customer · {m.sessions} sesi</p>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 flex-1">
                     <div>
@@ -1103,7 +1257,7 @@ export default function SalesPanelPage() {
                       {o.order_code}
                       {o.status === "AWAITING_SALES" && <span className="ml-2 text-[9px] font-bold uppercase bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-md">Perlu Dicek</span>}
                     </p>
-                    <p className="text-xs text-brand-gray-mid">Supplier: {o.supplier_name} Â· {o.items.length} item Â· {formatCurrency(o.total_amount)}</p>
+                    <p className="text-xs text-brand-gray-mid">Supplier: {o.supplier_name} · {o.items.length} item · {formatCurrency(o.total_amount)}</p>
                     <p className="text-[10px] text-brand-gray-light">{formatDate(o.created_at)}</p>
                   </div>
                   {o.status === "AWAITING_SALES" && (role === "SALES" && o.sales_id === myId) && (
@@ -1141,7 +1295,7 @@ export default function SalesPanelPage() {
       >
         <div className="space-y-3 text-sm text-brand-gray-dark">
           <p>
-            <strong>{selectedCust?.store_name}</strong> Â· {selectedCust?.payment_term_label}
+            <strong>{selectedCust?.store_name}</strong> · {selectedCust?.payment_term_label}
           </p>
           <div className="bg-brand-bg rounded-xl p-3 text-xs space-y-1">
             {lineItems
@@ -1150,7 +1304,7 @@ export default function SalesPanelPage() {
                 const p = productOf(li.productId);
                 return p ? (
                   <div key={i} className="flex justify-between">
-                    <span>{p.name} Ã— {li.qty}</span>
+                    <span>{p.name} × {li.qty}</span>
                     <span className="font-semibold">{formatCurrency(priceFor(p, selectedTerm) * li.qty)}</span>
                   </div>
                 ) : null;
@@ -1181,7 +1335,7 @@ export default function SalesPanelPage() {
       >
         <div className="space-y-3 text-sm text-brand-gray-dark">
           <p>
-            <strong>{role === "SALES_ADMIN" ? "Sudah sesuai?" : "Yakin menyetujui?"}</strong> â€”{" "}
+            <strong>{role === "SALES_ADMIN" ? "Sudah sesuai?" : "Yakin menyetujui?"}</strong> —{" "}
             {curInvoice?.invoice_number}
           </p>
           <p className="text-xs text-brand-gray-mid">
@@ -1210,7 +1364,7 @@ export default function SalesPanelPage() {
       >
         <div className="space-y-3 text-sm text-brand-gray-dark">
           <p>
-            Merujuk <strong>{curInvoice?.invoice_number}</strong> â€” {formatCurrency(curInvoice?.total ?? 0)}
+            Merujuk <strong>{curInvoice?.invoice_number}</strong> — {formatCurrency(curInvoice?.total ?? 0)}
           </p>
           <Textarea
             label="Alasan Retur"
@@ -1258,7 +1412,7 @@ function PipelineTracker({ status }: { status: string }) {
                     : "bg-gray-200 text-gray-400")
                 }
               >
-                {step.icon === "file" ? "1" : step.icon === "super" ? "2" : step.icon === "ship" ? "3" : step.icon === "fin" ? "4" : "âœ“"}
+                {step.icon === "file" ? "1" : step.icon === "super" ? "2" : step.icon === "ship" ? "3" : step.icon === "fin" ? "4" : "✓"}
               </div>
               <span className="text-[8px] text-brand-gray-light whitespace-nowrap">{step.label}</span>
             </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -105,7 +105,7 @@ export default function StockMovementsPage() {
       render: (_: unknown, row: typeof paginated[0]) => (
         <span className="text-xs text-brand-gray-mid whitespace-nowrap">
           <span className="font-semibold text-brand-gray-dark">{row.before_stock}</span>
-          {" â†’ "}
+          {" → "}
           <span className="font-bold text-brand-black">{row.after_stock}</span>
         </span>
       ),

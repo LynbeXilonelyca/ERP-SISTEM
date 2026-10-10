@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -109,12 +109,12 @@ export default function AuditLogPage() {
       label: "Perubahan",
       render: (_: unknown, row: typeof paginated[0]) => (
         <div className="flex items-center gap-1.5 text-[11px] font-mono min-w-[180px]">
-          <span className="text-red-500 truncate max-w-[130px]" title={row.old_value ?? "â€”"}>
-            {row.old_value ? truncate(row.old_value, 22) : "â€”"}
+          <span className="text-red-500 truncate max-w-[130px]" title={row.old_value ?? "—"}>
+            {row.old_value ? truncate(row.old_value, 22) : "—"}
           </span>
-          <span className="text-brand-gray-light">â†’</span>
-          <span className="text-green-600 truncate max-w-[130px]" title={row.new_value ?? "â€”"}>
-            {row.new_value ? truncate(row.new_value, 22) : "â€”"}
+          <span className="text-brand-gray-light">→</span>
+          <span className="text-green-600 truncate max-w-[130px]" title={row.new_value ?? "—"}>
+            {row.new_value ? truncate(row.new_value, 22) : "—"}
           </span>
         </div>
       ),
@@ -136,7 +136,7 @@ export default function AuditLogPage() {
         {topModules.map(([module, count], i) => (
           <div key={module} className={i === 0 ? "card py-3 bg-brand-yellow/10" : "card py-3"}>
             <p className="text-2xl font-bold text-brand-black">{count}</p>
-            <p className="text-xs text-brand-gray-mid mt-0.5">Log Â· {module}</p>
+            <p className="text-xs text-brand-gray-mid mt-0.5">Log · {module}</p>
           </div>
         ))}
         {topModules.length < 3 &&
@@ -152,7 +152,7 @@ export default function AuditLogPage() {
         <div className="flex items-start gap-3">
           <ScrollText className="w-4 h-4 text-brand-black mt-0.5 flex-shrink-0" />
           <p className="text-xs text-brand-gray-dark">
-            Audit log bersifat <strong>immutable</strong> â€” tidak bisa dihapus atau diubah.
+            Audit log bersifat <strong>immutable</strong> — tidak bisa dihapus atau diubah.
             Setiap aksi mencatat User, Role, Action, Module, Record ID, old value, new value, timestamp, IP, dan device.
           </p>
         </div>

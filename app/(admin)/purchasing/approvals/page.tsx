@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -91,10 +91,10 @@ export default function PurchaseApprovalsPage() {
       render: (_: unknown, row: (typeof pending)[0]) => (
         <div className="flex flex-col gap-0.5">
           {row.items.length === 0 ? (
-            <span className="text-xs text-brand-gray-light">â€”</span>
+            <span className="text-xs text-brand-gray-light">—</span>
           ) : (
             row.items.map((it, i) => (
-              <span key={i} className="text-xs text-brand-gray-dark">{it.product_name} Ã— {it.quantity} @ {formatCurrency(it.cost_price)}</span>
+              <span key={i} className="text-xs text-brand-gray-dark">{it.product_name} × {it.quantity} @ {formatCurrency(it.cost_price)}</span>
             ))
           )}
         </div>

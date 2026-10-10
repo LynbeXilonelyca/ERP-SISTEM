@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -77,7 +77,7 @@ export default function PurchasingPage() {
   const perPage = 10;
   const paginated = filteredPurchases.slice((page - 1) * perPage, page * perPage);
 
-  // â”€â”€â”€ Create purchase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Create purchase ---
   const addItem = () =>
     setItems((prev) => [...prev, { product_id: "", product_name: "", sku: "", quantity: 0, cost_price: 0, subtotal: 0 }]);
   const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
@@ -209,7 +209,7 @@ export default function PurchasingPage() {
         ],
       }));
     });
-    // Buat order untuk sales yang dituju (jalur pengadaan â†’ penjualan)
+    // Buat order untuk sales yang dituju (jalur pengadaan → penjualan)
     if (p.for_sales_id) {
       const order = {
         id: `ord${Date.now()}`,
@@ -244,7 +244,7 @@ export default function PurchasingPage() {
       ip_address: "local",
       device: "Web",
     });
-    notify({ title: "Purchase Disetujui", message: `${p.purchase_code} disetujui â€” stok bertambah & produk bisa dijual.`, type: "SUCCESS", target_role: "PURCHASE_ADMIN" });
+    notify({ title: "Purchase Disetujui", message: `${p.purchase_code} disetujui — stok bertambah & produk bisa dijual.`, type: "SUCCESS", target_role: "PURCHASE_ADMIN" });
   };
 
   const rejectPurchase = (p: (typeof purchases)[number]) => {
@@ -316,7 +316,7 @@ export default function PurchasingPage() {
             <div className="card bg-red-50/60 border border-red-100 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
-                <p className="text-xs font-bold text-red-600 uppercase">Low Stock Alert â€” {lowStock.length} produk</p>
+                <p className="text-xs font-bold text-red-600 uppercase">Low Stock Alert — {lowStock.length} produk</p>
               </div>
               <div className="space-y-2">
                 {lowStock.map((x) => (
@@ -331,7 +331,7 @@ export default function PurchasingPage() {
                     </div>
                     <div className="w-32">
                       <p className="text-[10px] text-brand-gray-light uppercase">Warning</p>
-                      <p className="text-sm font-semibold text-brand-gray-mid">â‰¤ {x.warning} unit</p>
+                      <p className="text-sm font-semibold text-brand-gray-mid">≤ {x.warning} unit</p>
                     </div>
                     <div className="flex items-center gap-1">
                       {isSuper && (
@@ -387,7 +387,7 @@ export default function PurchasingPage() {
                     </div>
                     <div className="w-36 flex-shrink-0">
                       <p className="text-[10px] text-brand-gray-light uppercase tracking-wide">Supplier</p>
-                      <p className="text-xs text-brand-gray-dark">{p.supplier_name || "â€”"}</p>
+                      <p className="text-xs text-brand-gray-dark">{p.supplier_name || "—"}</p>
                       {p.for_sales_name && <p className="text-[10px] text-blue-600 font-semibold">Untuk: {p.for_sales_name}</p>}
                     </div>
                     <div className="w-24 flex-shrink-0">
@@ -585,7 +585,7 @@ export default function PurchasingPage() {
                 <>
                   <img src={invoicePhoto} alt="bukti" className="max-h-40 rounded-lg border border-brand-gray-border" />
                   <span className="text-xs text-green-600 font-semibold flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5" /> Foto terunggah â€” klik untuk ganti
+                    <CheckCircle className="w-3.5 h-3.5" /> Foto terunggah — klik untuk ganti
                   </span>
                 </>
               ) : (
@@ -623,7 +623,7 @@ export default function PurchasingPage() {
       <Modal
         open={!!viewTarget}
         onClose={() => setViewTarget(null)}
-        title={`Detail â€” ${viewTarget?.purchase_code}`}
+        title={`Detail — ${viewTarget?.purchase_code}`}
         size="md"
         footer={<Button variant="secondary" onClick={() => setViewTarget(null)}>Tutup</Button>}
       >
@@ -653,7 +653,7 @@ export default function PurchasingPage() {
               {viewTarget.items.map((it, i) => (
                 <div key={i} className="flex justify-between text-xs">
                   <span className="text-brand-gray-dark">
-                    {it.product_name} Ã— {it.quantity}
+                    {it.product_name} × {it.quantity}
                   </span>
                   <span className="font-bold">{formatCurrency(it.subtotal)}</span>
                 </div>

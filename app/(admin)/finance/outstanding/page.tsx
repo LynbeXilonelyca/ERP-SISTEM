@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -21,7 +21,7 @@ export default function OutstandingPage() {
       render: (_: unknown, row: (typeof filtered)[0]) => (
         <div>
           <p className="text-xs font-bold text-brand-black">{row.store_name}</p>
-          <p className="text-[10px] text-brand-gray-light">{row.customer_code} Â· {row.sales_name}</p>
+          <p className="text-[10px] text-brand-gray-light">{row.customer_code} · {row.sales_name}</p>
         </div>
       ),
     },
@@ -42,7 +42,7 @@ export default function OutstandingPage() {
       label: "Credit Limit",
       render: (v: unknown) => (
         <span className="text-xs text-brand-gray-dark">
-          {Number(v) > 0 ? formatCurrency(Number(v)) : "â€”"}
+          {Number(v) > 0 ? formatCurrency(Number(v)) : "—"}
         </span>
       ),
     },

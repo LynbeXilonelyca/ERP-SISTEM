@@ -1,4 +1,4 @@
-// ─── Supplier ────────────────────────────────────────────────────
+// --- Supplier ---
 export interface Supplier {
   id: string;
   supplier_code: string;
@@ -11,17 +11,19 @@ export interface Supplier {
   created_at: string;
 }
 
-// ─── App Settings ────────────────────────────────────────────────
+// --- App Settings ---
 export interface AppSettings {
-  cut_off_days: number;
   cut_off_enabled: boolean;
-  main_commission_rate: number;
   own_brand_commission_rate: number;
   other_brand_commission_rate: number;
+  commission_threshold_pct: number;
+  bonus_enabled: boolean;
+  bonus_amount: number;
+  commission_due_days: number[];
   reminder_h1_enabled: boolean;
 }
 
-// ─── Sales Order (Jalur Pengadaan → Penjualan) ───────────────────
+// --- Sales Order (Jalur Pengadaan → Penjualan) ---
 export type OrderStatus =
   | "AWAITING_SALES"
   | "APPROVED_BY_SALES"
@@ -46,7 +48,7 @@ export interface SalesOrder {
   completed_at?: string;
 }
 
-// ─── Auth & Users ───────────────────────────────────────────────
+// --- Auth & Users ---
 export type Role =
   | "SUPER_ADMIN"
   | "SALES"
@@ -69,7 +71,7 @@ export interface User {
   updated_at: string;
 }
 
-// ─── Product ────────────────────────────────────────────────────
+// --- Product ---
 export interface Brand {
   id: string;
   name: string;
@@ -118,12 +120,14 @@ export interface Product {
   warning_stock: number;
   cost_price: number;
   prices: ProductPrice[];
+  freelance_price: number;
+  distributor_price: number;
   status: "ACTIVE" | "INACTIVE";
   image_url?: string;
   created_at: string;
 }
 
-// ─── Inventory ──────────────────────────────────────────────────
+// --- Inventory ---
 export interface InventoryItem {
   product_id: string;
   product_name: string;
@@ -158,7 +162,7 @@ export interface StockMovement {
   created_at: string;
 }
 
-// ─── Customer ───────────────────────────────────────────────────
+// --- Customer ---
 export type CustomerType = "REGULAR" | "RESELLER" | "DISTRIBUTOR";
 
 export interface Customer {
@@ -183,24 +187,68 @@ export interface Customer {
   created_at: string;
 }
 
-// ─── Sales Session ───────────────────────────────────────────────
-export type SessionStatus = "ACTIVE" | "PENDING_REVIEW" | "DONE" | "CANCELLED";
+// --- Employee (Karyawan: Supir & Kenek) ---
+export type EmployeeType = "SUPER" | "KENEK";
+
+export interface Employee {
+  id: string;
+  name: string;
+  employee_type: EmployeeType;
+  phone: string;
+  route: string;
+  status: "ACTIVE" | "INACTIVE";
+  created_at: string;
+}
+
+// --- Shipping Route (Jalur) ---
+export type RouteStatus = "OPEN" | "CLOSED";
+
+export interface ShippingRoute {
+  id: string;
+  name: string;
+  status: RouteStatus;
+  closed_reason?: string;
+  created_at: string;
+}
+
+// --- Sales Session ---
+export type SessionStatus =
+  | "ACTIVE"
+  | "SUBMITTED"
+  | "REVIEWED"
+  | "APPROVED"
+  | "CANCELLED";
 
 export interface SalesSession {
   id: string;
   session_code: string;
   sales_id: string;
   sales_name: string;
+  period: string;
   start_date: string;
+  start_day: string;
   end_date?: string;
   status: SessionStatus;
+  route_id?: string;
+  route_name?: string;
+  supir_id?: string;
+  supir_name?: string;
+  kenek_id?: string;
+  kenek_name?: string;
   total_invoices: number;
   total_revenue: number;
+  total_collected: number;
   total_commission: number;
+  bonus_amount: number;
   created_at: string;
+  submitted_at?: string;
+  reviewed_at?: string;
+  approved_at?: string;
+  finance_note?: string;
+  super_note?: string;
 }
 
-// ─── Invoice ────────────────────────────────────────────────────
+// --- Invoice ---
 export type InvoiceStatus =
     | "DRAFT"
     | "CANCELLED"
@@ -221,6 +269,7 @@ export type ShippingStatus =
   | "SENDING"
   | "DELIVERED"
   | "RETURNED";
+export type DeliveryProofStatus = "PENDING" | "VERIFIED" | "REJECTED";
 
 export interface InvoiceItem {
   id: string;
@@ -253,6 +302,15 @@ export interface Invoice {
   invoice_status: InvoiceStatus;
   payment_status: PaymentStatus;
   shipping_status: ShippingStatus;
+  // Bukti pengiriman (foto) — diunggah Admin Shipping / Kepala Gudang,
+  // lalu diverifikasi Admin Pembelian.
+  delivery_proof_url?: string;
+  delivery_proof_by?: string;
+  delivery_proof_at?: string;
+  delivery_proof_status?: DeliveryProofStatus;
+  delivery_proof_checked_by?: string;
+  delivery_proof_checked_at?: string;
+  delivery_proof_note?: string;
   source?: "SALES" | "ORDER";
   order_id?: string;
   due_date?: string;
@@ -266,7 +324,7 @@ export interface Invoice {
     updated_at: string;
   }
 
-// ─── Purchase ───────────────────────────────────────────────────
+// --- Purchase ---
 export type PurchaseStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
 
 export interface PurchaseItem {
@@ -299,7 +357,7 @@ export interface PurchaseRequest {
   approved_at?: string;
 }
 
-// ─── Finance ────────────────────────────────────────────────────
+// --- Finance ---
 export interface Payment {
   id: string;
   invoice_id: string;
@@ -327,7 +385,7 @@ export interface BillingSession {
     approved_at?: string;
   }
 
-// ─── Commission ─────────────────────────────────────────────────
+// --- Commission ---
 export type CommissionStatus =
   | "PENDING"
   | "CALCULATED"
@@ -343,18 +401,17 @@ export interface CommissionTransaction {
   invoice_id: string;
   invoice_number: string;
   gross_profit: number;
-  main_commission_rate: number;
-  main_commission: number;
   own_brand_rate: number;
   own_brand_commission: number;
-  sub_commission_rate: number;
-  sub_commission: number;
+  other_brand_rate: number;
+  other_brand_commission: number;
   total_commission: number;
+  collected_amount: number;
   status: CommissionStatus;
   created_at: string;
 }
 
-// ─── Notification ────────────────────────────────────────────────
+// --- Notification ---
 export interface Notification {
   id: string;
   title: string;
@@ -365,7 +422,7 @@ export interface Notification {
   target_role?: Role;
 }
 
-// ─── Price Change Request ─────────────────────────────────────────
+// --- Price Change Request ---
 export type PriceChangeStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface PriceChangeRequest {
@@ -386,7 +443,7 @@ export interface PriceChangeRequest {
   decided_at?: string;
 }
 
-// ─── Audit Log ───────────────────────────────────────────────────
+// --- Audit Log ---
 export interface AuditLog {
   id: string;
   user_name: string;
@@ -401,7 +458,7 @@ export interface AuditLog {
   created_at: string;
 }
 
-// ─── Table & Pagination ─────────────────────────────────────────
+// --- Table & Pagination ---
 export interface PaginationMeta {
   current_page: number;
   per_page: number;

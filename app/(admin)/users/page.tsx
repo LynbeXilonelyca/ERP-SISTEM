@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -154,8 +154,8 @@ export default function UsersPage() {
       action: editing ? "UPDATE" : "CREATE",
       module: "USER",
       record_id: data.email,
-      old_value: editing ? `role: ${editing.role} Â· status: ${editing.status}` : "NONE",
-      new_value: `role: ${data.role} Â· status: ${data.status}`,
+      old_value: editing ? `role: ${editing.role} · status: ${editing.status}` : "NONE",
+      new_value: `role: ${data.role} · status: ${data.status}`,
       ip_address: "local",
       device: "Web",
     });
@@ -202,7 +202,7 @@ export default function UsersPage() {
       key: "phone",
       label: "Telepon",
       render: (v: unknown) => (
-        <span className="text-xs text-brand-gray-dark">{String(v || "â€”")}</span>
+        <span className="text-xs text-brand-gray-dark">{String(v || "—")}</span>
       ),
     },
     {
@@ -227,7 +227,7 @@ export default function UsersPage() {
             </button>
           </div>
         ) : (
-          <span className="text-[10px] text-brand-gray-light">â€”</span>
+          <span className="text-[10px] text-brand-gray-light">—</span>
         ),
     },
   ];
@@ -397,7 +397,7 @@ export default function UsersPage() {
                 { value: "BOTH", label: "Web & Mobile" },
               ]}
             />
-            <p className="text-xs text-brand-gray-light mt-1">Sales â†’ Mobile Only. Admin/Finance â†’ Web Only.</p>
+            <p className="text-xs text-brand-gray-light mt-1">Sales → Mobile Only. Admin/Finance → Web Only.</p>
           </div>
           <Select
             label="Status"

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -43,24 +43,24 @@ export default function CommissionPage() {
       render: (v: unknown) => <span className="text-xs font-semibold text-brand-gray-dark">{formatCurrency(Number(v))}</span>,
     },
     {
-      key: "main_commission",
-      label: "Main",
+      key: "collected_amount",
+      label: "Penagihan",
       render: (_: unknown, row: (typeof commissions)[0]) => (
-        <span className="text-xs text-brand-gray-dark">Rp {Number(row.main_commission).toLocaleString("id-ID")} ({row.main_commission_rate}%)</span>
+        <span className="text-xs text-brand-gray-dark">{formatCurrency(row.collected_amount)}</span>
       ),
     },
     {
       key: "own_brand_commission",
-      label: "Own Brand",
+      label: "Merek Sendiri",
       render: (_: unknown, row: (typeof commissions)[0]) => (
-        <span className="text-xs text-blue-600">{row.own_brand_commission > 0 ? `${formatCurrency(row.own_brand_commission)} (+${row.own_brand_rate}%)` : "â€”"}</span>
+        <span className="text-xs text-blue-600">{row.own_brand_commission > 0 ? `${formatCurrency(row.own_brand_commission)} (+${row.own_brand_rate}%)` : "—"}</span>
       ),
     },
     {
-      key: "sub_commission",
-      label: "Sub",
+      key: "other_brand_commission",
+      label: "Merek Lain",
       render: (_: unknown, row: (typeof commissions)[0]) => (
-        <span className="text-xs text-purple-600">{row.sub_commission > 0 ? `${formatCurrency(row.sub_commission)} (+${row.sub_commission_rate}%)` : "â€”"}</span>
+        <span className="text-xs text-purple-600">{row.other_brand_commission > 0 ? `${formatCurrency(row.other_brand_commission)} (+${row.other_brand_rate}%)` : "—"}</span>
       ),
     },
     {
@@ -117,12 +117,12 @@ export default function CommissionPage() {
 
       <Modal open={showInfo} onClose={() => setShowInfo(false)} title="Commission Engine" size="md" footer={<Button variant="secondary" onClick={() => setShowInfo(false)}>Tutup</Button>}>
         <div className="space-y-3 text-sm text-brand-gray-dark">
-          <p><strong>Main Commission:</strong> dihitung dari profit/margin invoice.</p>
-          <p><strong>Own Brand:</strong> tambahan persentase untuk produk own brand (ditambahkan ke main).</p>
-          <p><strong>Sub Commission:</strong> bonus per kategori/sub-kategori, dengan metode Add/Replace/Highest.</p>
+          <p><strong>Komisi dihitung dari penagihan (yang sudah dibayar).</strong> Setiap invoice hanya dikomisi jika nilai sudah diterima.</p>
+          <p><strong>Merek Sendiri:</strong> persentase komisi untuk produk own brand.</p>
+          <p><strong>Merek Lain:</strong> persentase komisi untuk produk non own brand.</p>
           <div className="p-3 bg-brand-yellow/10 rounded-xl">
-            <p className="text-xs"><strong>Contoh:</strong> Main 5% + Own Brand 2% + Sub 1% = Final 8%.</p>
-            <p className="text-xs mt-1">Retur menghasilkan <strong>adjustment</strong>, bukan menghapus komisi lama.</p>
+            <p className="text-xs"><strong>Contoh:</strong> Merek Sendiri 2% + Merek Lain 1% dari profit penagihan.</p>
+            <p className="text-xs mt-1">Komisi baru cair setelah Super Admin approve session sales.</p>
           </div>
         </div>
       </Modal>

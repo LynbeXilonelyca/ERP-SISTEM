@@ -83,7 +83,7 @@ export function daysBetween(from: string, to: string): number {
   return Math.floor((b - a) / (1000 * 60 * 60 * 24));
 }
 
-// ─── Margin & peringatan harga ───────────────────────────────────
+// --- Margin & peringatan harga ---
 export type MarginLevel = "danger" | "warning" | "ok";
 
 // sellingPrice lebih tinggi dari harga modal bisa jadi penjualan rugi.
@@ -100,19 +100,19 @@ export function marginInfo(sellingPrice: number, costPrice: number): { marginPct
   return { marginPct, level: "ok", message: `Margin ${marginPct.toFixed(1)}%` };
 }
 
-// ─── Cut Off (pelanggan melewati tenggat pembayaran) ────────────
+// --- Cut Off (pelanggan melewati jatuh tempo) ---
 // Pelanggan kena cut off jika masih punya piutang CONFIRMED/DELIVERED
-// yang sudah melewati cut_off_days sejak pembuatan invoice.
+// yang sudah lewat due_date invoice-nya dan belum lunas.
 export function isCustomerCutOff(customerId: string, invoices: Invoice[], settings: AppSettings): boolean {
   if (!settings.cut_off_enabled) return false;
   const now = Date.now();
-  const cutoffMs = settings.cut_off_days * 24 * 60 * 60 * 1000;
   return invoices.some(
     (i) =>
       i.customer_id === customerId &&
       (i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED") &&
-      i.payment_status !== "PAID" &&
-      now - new Date(i.created_at).getTime() > cutoffMs
+      (i.payment_status === "UNPAID" || i.payment_status === "PARTIAL") &&
+      !!i.due_date &&
+      new Date(i.due_date).getTime() < now
   );
 }
 

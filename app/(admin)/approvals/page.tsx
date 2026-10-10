@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,31 +14,29 @@ import {
   ShoppingCart,
   Tag,
   CalendarClock,
-  Receipt,
   Check,
   X,
   Eye,
 } from "lucide-react";
 
-type Tab = "invoice" | "purchase" | "price" | "session" | "billing";
+type Tab = "invoice" | "purchase" | "price" | "session";
 
 type Decision =
   | { type: "INVOICE"; approve: boolean; id: string }
   | { type: "PURCHASE"; approve: boolean; id: string }
   | { type: "PRICE"; approve: boolean; id: string }
-  | { type: "SESSION"; approve: boolean; id: string }
-  | { type: "BILLING"; approve: boolean; id: string };
+  | { type: "SESSION"; approve: boolean; id: string };
 
 export default function ApprovalsPage() {
   const {
     purchases,
     sessions,
     invoices,
-    billing_sessions,
     price_change_requests,
     orders,
     products,
     settings,
+    payments,
     setDB,
     addAudit,
     notify,
@@ -57,10 +55,9 @@ export default function ApprovalsPage() {
   );
   const pendingPurchases = useMemo(() => purchases.filter((p) => p.status === "SUBMITTED"), [purchases]);
   const pendingPrice = useMemo(() => price_change_requests.filter((r) => r.status === "PENDING"), [price_change_requests]);
-  const pendingSessions = useMemo(() => sessions.filter((s) => s.status === "PENDING_REVIEW"), [sessions]);
-  const pendingBilling = useMemo(
-    () => billing_sessions.filter((b) => b.status === "PENDING" || b.status === "REVIEWED"),
-    [billing_sessions]
+  const pendingSessions = useMemo(
+    () => sessions.filter((s) => s.status === "SUBMITTED" || s.status === "REVIEWED"),
+    [sessions]
   );
 
   const counts = {
@@ -68,12 +65,13 @@ export default function ApprovalsPage() {
     purchase: pendingPurchases.length,
     price: pendingPrice.length,
     session: pendingSessions.length,
-    billing: pendingBilling.length,
   };
-  const totalPending = counts.invoice + counts.purchase + counts.price + counts.session + counts.billing;
+  const totalPending = counts.invoice + counts.purchase + counts.price + counts.session;
+
+  const paidFor = (invId: string) =>
+    payments.filter((p) => p.invoice_id === invId).reduce((a, p) => a + (p.amount || 0), 0);
 
   const computeCommissionForInvoice = (inv: (typeof invoices)[number]) => {
-    let gross = 0;
     let ownGross = 0;
     let otherGross = 0;
     inv.items.forEach((it) => {
@@ -82,23 +80,24 @@ export default function ApprovalsPage() {
       const product = products.find((p) => p.id === it.product_id);
       if (product?.is_own_brand) ownGross += profit;
       else otherGross += profit;
-      gross += profit;
     });
-    const main = settings.main_commission_rate;
+    const total = inv.total || 1;
+    const paid = Math.min(total, paidFor(inv.id));
+    const ratio = paid / total;
+    const isLate = inv.due_date && paid < total && new Date(inv.due_date).getTime() < Date.now();
+    const allow = isLate ? 0 : 1;
     const ownRate = settings.own_brand_commission_rate;
     const otherRate = settings.other_brand_commission_rate;
-    const mainCommission = Math.max(0, gross) * (main / 100);
-    const ownCommission = Math.max(0, ownGross) * (ownRate / 100);
-    const subCommission = Math.max(0, otherGross) * (otherRate / 100);
+    const ownCommission = Math.max(0, ownGross) * (ownRate / 100) * ratio * allow;
+    const otherCommission = Math.max(0, otherGross) * (otherRate / 100) * ratio * allow;
     return {
-      gross_profit: Math.max(0, gross),
-      main_commission_rate: main,
-      main_commission: mainCommission,
+      gross_profit: Math.max(0, ownGross + otherGross),
+      collected_amount: paid,
       own_brand_rate: ownRate,
       own_brand_commission: ownCommission,
-      sub_commission_rate: otherRate,
-      sub_commission: subCommission,
-      total_commission: mainCommission + ownCommission + subCommission,
+      other_brand_rate: otherRate,
+      other_brand_commission: otherCommission,
+      total_commission: ownCommission + otherCommission,
     };
   };
 
@@ -113,7 +112,7 @@ export default function ApprovalsPage() {
       const inv = invoices.find((i) => i.id === decision.id);
       if (!inv) return;
       if (inv.source === "ORDER") {
-        // Invoice dari jalur order/Finance â€” approve â†’ CONFIRMED, tolak â†’ kembali ke finance
+        // Invoice dari jalur order/Finance — approve → CONFIRMED, tolak → kembali ke finance
         setDB((db) => ({
           ...db,
           invoices: db.invoices.map((i) =>
@@ -136,7 +135,7 @@ export default function ApprovalsPage() {
         notify(
           approve
             ? { title: "Invoice Order Disetujui", message: `${inv.invoice_number} dikonfirmasi & tercatat di history.`, type: "SUCCESS", target_role: "FINANCE" }
-            : { title: "Invoice Order Ditolak", message: `${inv.invoice_number} dibatalkan â€” order kembali ke Finance untuk diperbaiki.`, type: "ERROR", target_role: "FINANCE" }
+            : { title: "Invoice Order Ditolak", message: `${inv.invoice_number} dibatalkan — order kembali ke Finance untuk diperbaiki.`, type: "ERROR", target_role: "FINANCE" }
         );
         return;
       }
@@ -226,7 +225,7 @@ export default function ApprovalsPage() {
         }
       }
       addAudit({ user_name: who, user_role: role, action: approve ? "APPROVE" : "REJECT", module: "PURCHASE", record_id: pr.purchase_code, old_value: "SUBMITTED", new_value: approve ? "APPROVED" : "REJECTED", ip_address: "local", device: "Web" });
-      notify({ title: approve ? "Purchase Disetujui" : "Purchase Ditolak", message: `${pr.purchase_code} ${approve ? "disetujui â€” stok bertambah" : "ditolak â€” stok tidak berubah"}`, type: approve ? "SUCCESS" : "ERROR", target_role: "PURCHASE_ADMIN" });
+      notify({ title: approve ? "Purchase Disetujui" : "Purchase Ditolak", message: `${pr.purchase_code} ${approve ? "disetujui — stok bertambah" : "ditolak — stok tidak berubah"}`, type: approve ? "SUCCESS" : "ERROR", target_role: "PURCHASE_ADMIN" });
     } else if (decision.type === "PRICE") {
       const req = price_change_requests.find((r) => r.id === decision.id);
       if (!req) return;
@@ -253,24 +252,18 @@ export default function ApprovalsPage() {
           : db.products,
       }));
       addAudit({ user_name: who, user_role: role, action: approve ? "APPROVE" : "REJECT", module: "PRICE", record_id: req.sku, old_value: String(req.old_price), new_value: String(req.new_price), ip_address: "local", device: "Web" });
-      notify({ title: approve ? "Perubahan Harga Disetujui" : "Perubahan Harga Ditolak", message: `${req.product_name} (${req.payment_term_label}): ${formatCurrency(req.old_price)} â†’ ${formatCurrency(req.new_price)}`, type: approve ? "SUCCESS" : "ERROR", target_role: req.requested_by_role });
+      notify({ title: approve ? "Perubahan Harga Disetujui" : "Perubahan Harga Ditolak", message: `${req.product_name} (${req.payment_term_label}): ${formatCurrency(req.old_price)} → ${formatCurrency(req.new_price)}`, type: approve ? "SUCCESS" : "ERROR", target_role: req.requested_by_role });
     } else if (decision.type === "SESSION") {
       const s = sessions.find((x) => x.id === decision.id);
       if (!s) return;
-      setDB((db) => ({
-        ...db,
-        sessions: db.sessions.map((x) => (x.id === s.id ? { ...x, status: approve ? "DONE" : "CANCELLED" } : x)),
-      }));
-      addAudit({ user_name: who, user_role: role, action: approve ? "APPROVE" : "REJECT", module: "SESSION", record_id: s.session_code, old_value: "PENDING_REVIEW", new_value: approve ? "DONE" : "CANCELLED", ip_address: "local", device: "Web" });
-      notify({ title: approve ? "Sesi Disetujui" : "Sesi Ditolak", message: `${s.session_code} ${approve ? "dikunci & komisi final" : "dibatalkan"}`, type: approve ? "SUCCESS" : "ERROR" });
-    } else {
-      const t = billing_sessions.find((b) => b.id === decision.id);
-      if (!t) return;
       if (approve) {
-        const session = sessions.find((s) => s.id === t.session_id);
         const sessionInvoices = invoices.filter(
-          (i) => i.session_id === t.session_id && (i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED")
+          (i) => i.session_id === s.id && (i.invoice_status === "CONFIRMED" || i.invoice_status === "DELIVERED")
         );
+        const salesInvoices = invoices.filter((i) => i.session_id === s.id && i.invoice_status !== "CANCELLED");
+        const totalRevenue = salesInvoices.reduce((a, i) => a + i.total, 0);
+        const totalCollected = salesInvoices.reduce((a, i) => a + paidFor(i.id), 0);
+        const pct = totalRevenue > 0 ? totalCollected / totalRevenue : 0;
         const newCommissions = sessionInvoices.map((inv) => {
           const c = computeCommissionForInvoice(inv);
           return {
@@ -281,44 +274,60 @@ export default function ApprovalsPage() {
             invoice_id: inv.id,
             invoice_number: inv.invoice_number,
             gross_profit: c.gross_profit,
-            main_commission_rate: c.main_commission_rate,
-            main_commission: c.main_commission,
             own_brand_rate: c.own_brand_rate,
             own_brand_commission: c.own_brand_commission,
-            sub_commission_rate: c.sub_commission_rate,
-            sub_commission: c.sub_commission,
+            other_brand_rate: c.other_brand_rate,
+            other_brand_commission: c.other_brand_commission,
             total_commission: c.total_commission,
+            collected_amount: c.collected_amount,
             status: "APPROVED" as const,
             created_at: now,
           };
         });
+        let sessionCommission = newCommissions.reduce((a, c) => a + c.total_commission, 0);
+        let bonus = 0;
+        if (pct >= settings.commission_threshold_pct / 100 && settings.bonus_enabled && pct >= 1) {
+          bonus = settings.bonus_amount;
+          sessionCommission += bonus;
+        }
+        if (pct < settings.commission_threshold_pct / 100) {
+          sessionCommission = 0;
+        }
         setDB((db) => ({
           ...db,
-          billing_sessions: db.billing_sessions.map((b) =>
-            b.id === t.id
+          sessions: db.sessions.map((x) =>
+            x.id === s.id
               ? {
-                  ...b,
+                  ...x,
                   status: "APPROVED" as const,
-                  total_commission: newCommissions.reduce((a, c) => a + c.total_commission, 0),
+                  total_collected: totalCollected,
+                  total_commission: sessionCommission,
+                  bonus_amount: bonus,
                   approved_at: now,
                 }
-              : b
+              : x
           ),
-          commissions: [...db.commissions, ...newCommissions],
-          sessions: db.sessions.map((s) => (s.id === t.session_id ? { ...s, status: "DONE" as const } : s)),
+          commissions: sessionCommission > 0 ? [...db.commissions, ...newCommissions] : db.commissions,
         }));
-        recalcSessionTotals(t.session_id);
-        addAudit({ user_name: who, user_role: role, action: "APPROVE", module: "BILLING_SESSION", record_id: session?.session_code ?? t.session_id, old_value: "REVIEWED", new_value: "APPROVED", ip_address: "local", device: "Web" });
-        notify({ title: "Sesi Tagihan Disetujui", message: `Komisi ${formatCurrency(newCommissions.reduce((a, c) => a + c.total_commission, 0))} untuk ${t.sales_name} dihitung otomatis.`, type: "SUCCESS" });
+        recalcSessionTotals(s.id);
+        addAudit({ user_name: who, user_role: role, action: "APPROVE", module: "SESSION", record_id: s.session_code, old_value: "REVIEWED", new_value: "APPROVED", ip_address: "local", device: "Web" });
+        notify({
+          title: approve ? "Sesi Disetujui" : "Sesi Ditolak",
+          message:
+            pct < settings.commission_threshold_pct / 100
+              ? `${s.session_code} disetujui tapi penagihan ${Math.round(pct * 100)}% belum capai ${settings.commission_threshold_pct}% — komisi belum cair.`
+              : `${s.session_code} dikunci & komisi ${formatCurrency(sessionCommission)} final${bonus > 0 ? ` (+ bonus ${formatCurrency(bonus)})` : ""}.`,
+          type: approve ? "SUCCESS" : "ERROR",
+        });
       } else {
         setDB((db) => ({
           ...db,
-          billing_sessions: db.billing_sessions.map((b) => (b.id === t.id ? { ...b, status: "REJECTED" as const } : b)),
+          sessions: db.sessions.map((x) => (x.id === s.id ? { ...x, status: "CANCELLED" as const } : x)),
         }));
-        notify({ title: "Sesi Tagihan Ditolak", message: "Sesi ditolak, komisi tidak dihitung.", type: "ERROR" });
+        addAudit({ user_name: who, user_role: role, action: "REJECT", module: "SESSION", record_id: s.session_code, old_value: "SUBMITTED", new_value: "CANCELLED", ip_address: "local", device: "Web" });
+        notify({ title: "Sesi Ditolak", message: `${s.session_code} dibatalkan`, type: "ERROR" });
       }
     }
-
     setDecision(null);
     setReason("");
   };
@@ -327,13 +336,12 @@ export default function ApprovalsPage() {
     if (tab === "price") setDecision({ type: "PRICE", approve, id });
     else if (tab === "purchase") setDecision({ type: "PURCHASE", approve, id });
     else if (tab === "session") setDecision({ type: "SESSION", approve, id });
-    else if (tab === "billing") setDecision({ type: "BILLING", approve, id });
     else setDecision({ type: "INVOICE", approve, id });
   };
 
   const decisionMessage = (() => {
     if (!decision) return "";
-    const noun = decision.type === "PURCHASE" ? "purchase (stok akan bertambah jika disetujui)" : decision.type === "PRICE" ? "perubahan harga" : decision.type === "SESSION" ? "sesi penjualan" : decision.type === "BILLING" ? "sesi tagihan (komisi dihitung otomatis)" : "invoice penjualan";
+    const noun = decision.type === "PURCHASE" ? "purchase (stok akan bertambah jika disetujui)" : decision.type === "PRICE" ? "perubahan harga" : decision.type === "SESSION" ? "sesi penjualan (komisi dihitung dari penagihan)" : "invoice penjualan";
     return `${decision.approve ? "Anda akan menyetujui" : "Anda akan menolak"} ${noun}.${decision.type === "PRICE" ? " Ada catatan untuk ditambahkan?" : " Lanjutkan?"}`;
   })();
 
@@ -345,7 +353,6 @@ export default function ApprovalsPage() {
     { key: "purchase", label: "Stok / Purchase", count: counts.purchase, icon: <ShoppingCart className="w-4 h-4" /> },
     { key: "price", label: "Perubahan Harga", count: counts.price, icon: <Tag className="w-4 h-4" /> },
     { key: "session", label: "Sesi Penjualan", count: counts.session, icon: <CalendarClock className="w-4 h-4" /> },
-    { key: "billing", label: "Sesi Tagihan", count: counts.billing, icon: <Receipt className="w-4 h-4" /> },
   ];
 
   const Row = ({ children }: { children: React.ReactNode }) => (
@@ -370,7 +377,7 @@ export default function ApprovalsPage() {
         breadcrumbs={[{ label: "Home", href: "/dashboard" }, { label: "Approvals" }]}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className="card py-3 text-left transition-transform hover:-translate-y-0.5">
             <div className="flex items-center justify-between">
@@ -408,7 +415,7 @@ export default function ApprovalsPage() {
                       )}
                     </p>
                     <p className="text-[10px] text-brand-gray-mid">
-                      {inv.store_name} Â· {inv.sales_name} Â· {formatCurrency(inv.total)}
+                      {inv.store_name} · {inv.sales_name} · {formatCurrency(inv.total)}
                     </p>
                     {inv.change_note && (
                       <p className="text-[10px] text-orange-600 mt-0.5">Ubah: {inv.change_note}</p>
@@ -438,11 +445,11 @@ export default function ApprovalsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-brand-black">{p.purchase_code}</p>
                     <p className="text-[10px] text-brand-gray-mid">
-                      {p.requested_by_name} Â· {p.items.length} item Â· {formatCurrency(p.total_amount)}
+                      {p.requested_by_name} · {p.items.length} item · {formatCurrency(p.total_amount)}
                     </p>
                     <p className="text-[10px] text-brand-gray-light">
-                      Supplier: {p.supplier_name || "â€”"}
-                      {p.for_sales_name ? ` Â· Untuk: ${p.for_sales_name}` : ""}
+                      Supplier: {p.supplier_name || "—"}
+                      {p.for_sales_name ? ` · Untuk: ${p.for_sales_name}` : ""}
                     </p>
                   </div>
                   <button
@@ -468,11 +475,11 @@ export default function ApprovalsPage() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-brand-black">
-                      {r.product_name} â€” {r.sku}
+                      {r.product_name} — {r.sku}
                     </p>
                     <p className="text-[10px] text-brand-gray-mid">
-                      {r.payment_term_label}: {formatCurrency(r.old_price)} â†’{" "}
-                      <span className="font-bold text-brand-yellow-dark">{formatCurrency(r.new_price)}</span> Â· diajukan {r.requested_by_name}
+                      {r.payment_term_label}: {formatCurrency(r.old_price)} →{" "}
+                      <span className="font-bold text-brand-yellow-dark">{formatCurrency(r.new_price)}</span> · diajukan {r.requested_by_name}
                     </p>
                   </div>
                   <Actions id={r.id} />
@@ -492,30 +499,13 @@ export default function ApprovalsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-brand-black">{s.session_code}</p>
                     <p className="text-[10px] text-brand-gray-mid">
-                      {s.sales_name} Â· {s.total_invoices} invoice Â· {formatCurrency(s.total_revenue)}
+                      {s.sales_name} · Periode {s.period} · {s.total_invoices} invoice · {formatCurrency(s.total_revenue)}
+                    </p>
+                    <p className="text-[10px] text-brand-gray-light">
+                      Supir: {s.supir_name ?? "—"} · Kenek: {s.kenek_name ?? "—"} · Jalur: {s.route_name ?? "—"}
                     </p>
                   </div>
                   <Actions id={s.id} />
-                </Row>
-              ))
-            ))}
-
-          {tab === "billing" &&
-            (pendingBilling.length === 0 ? (
-              <EmptyState />
-            ) : (
-              pendingBilling.map((b) => (
-                <Row key={b.id}>
-                  <span className="p-2 rounded-xl bg-amber-100 text-amber-600">
-                    <Receipt className="w-4 h-4" />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-brand-black">{b.session_code || b.session_id}</p>
-                    <p className="text-[10px] text-brand-gray-mid">
-                      {b.sales_name} Â· status {b.status.replace(/_/g, " ")}
-                    </p>
-                  </div>
-                  <Actions id={b.id} />
                 </Row>
               ))
             ))}
@@ -526,7 +516,7 @@ export default function ApprovalsPage() {
       <Modal
         open={!!detail}
         onClose={() => setDetail(null)}
-        title={detail?.type === "INVOICE" ? `Detail â€” ${invoiceDetail?.invoice_number}` : detail?.type === "PURCHASE" ? `Detail â€” ${purchaseDetail?.purchase_code}` : "Detail"}
+        title={detail?.type === "INVOICE" ? `Detail — ${invoiceDetail?.invoice_number}` : detail?.type === "PURCHASE" ? `Detail — ${purchaseDetail?.purchase_code}` : "Detail"}
         size="md"
         footer={<Button variant="secondary" onClick={() => setDetail(null)}>Tutup</Button>}
       >
@@ -539,7 +529,7 @@ export default function ApprovalsPage() {
               {invoiceDetail.items.map((it, i) => (
                 <div key={i} className="flex justify-between text-xs">
                   <span className="text-brand-gray-dark">
-                    {it.product_name} Ã— {it.quantity}
+                    {it.product_name} × {it.quantity}
                   </span>
                   <span className="font-bold">{formatCurrency(it.selling_price * it.quantity)}</span>
                 </div>
@@ -568,7 +558,7 @@ export default function ApprovalsPage() {
               {purchaseDetail.items.map((it, i) => (
                 <div key={i} className="flex justify-between text-xs">
                   <span className="text-brand-gray-dark">
-                    {it.product_name} Ã— {it.quantity} @ {formatCurrency(it.cost_price)}
+                    {it.product_name} × {it.quantity} @ {formatCurrency(it.cost_price)}
                   </span>
                   <span className="font-bold">{formatCurrency(it.subtotal)}</span>
                 </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -32,6 +32,8 @@ type Draft = {
   warning_stock: number;
   cost_price: number;
   prices: Record<string, number>;
+  freelance_price: number;
+  distributor_price: number;
   status: "ACTIVE" | "INACTIVE";
   image_url?: string;
   created_at: string;
@@ -42,11 +44,12 @@ type ProductRow = Product & { available_stock: number };
 export default function ProductsPage() {
   const { products, brands, categories, inventory, setDB, notify, addAudit, recalcInventory } = useData();
   const { user, hasRole } = useAuth();
-  const isManage = hasRole("SUPER_ADMIN") || hasRole("SALES_ADMIN") || hasRole("PURCHASE_ADMIN");
+  const isManage = hasRole("SUPER_ADMIN") || hasRole("PURCHASE_ADMIN");
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [priceFilter, setPriceFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -103,6 +106,8 @@ export default function ProductsPage() {
       warning_stock: 20,
       cost_price: 0,
       prices: {},
+      freelance_price: 0,
+      distributor_price: 0,
       status: "ACTIVE",
       image_url: "",
       created_at: new Date().toISOString(),
@@ -141,6 +146,8 @@ export default function ProductsPage() {
       warning_stock: p.warning_stock,
       cost_price: p.cost_price,
       prices: priceMap,
+      freelance_price: p.freelance_price ?? 0,
+      distributor_price: p.distributor_price ?? 0,
       status: p.status,
       image_url: p.image_url ?? "",
       created_at: p.created_at,
@@ -234,11 +241,11 @@ export default function ProductsPage() {
       sku: draft.sku,
       name: draft.name,
       brand_id: draft.brand_id,
-      brand_name: draft.brand_name || "â€”",
+      brand_name: draft.brand_name || "—",
       category_id: draft.category_id,
-      category_name: draft.category_name || "â€”",
+      category_name: draft.category_name || "—",
       sub_category_id: draft.sub_category_id,
-      sub_category_name: draft.sub_category_name || "â€”",
+      sub_category_name: draft.sub_category_name || "—",
       is_own_brand: draft.is_own_brand,
       minimum_order: draft.minimum_order,
       maximum_order: draft.maximum_order,
@@ -246,6 +253,8 @@ export default function ProductsPage() {
       warning_stock: draft.warning_stock,
       cost_price: draft.cost_price,
       prices,
+      freelance_price: draft.freelance_price || 0,
+      distributor_price: draft.distributor_price || 0,
       status: draft.status,
       image_url: draft.image_url || undefined,
       created_at: draft.created_at,
@@ -324,7 +333,7 @@ export default function ProductsPage() {
       label: "Kategori",
       render: (_: unknown, row: ProductRow) => (
         <div>
-          <p className="text-xs text-brand-gray-dark">{row.category_name || "â€”"}</p>
+          <p className="text-xs text-brand-gray-dark">{row.category_name || "—"}</p>
           {row.sub_category_name && (
             <p className="text-[10px] text-brand-gray-light">{row.sub_category_name}</p>
           )}
@@ -334,7 +343,7 @@ export default function ProductsPage() {
     {
       key: "brand_name",
       label: "Brand",
-      render: (v: unknown) => <span className="text-xs text-brand-gray-dark">{String(v || "â€”")}</span>,
+      render: (v: unknown) => <span className="text-xs text-brand-gray-dark">{String(v || "—")}</span>,
     },
     {
       key: "stok",
@@ -354,10 +363,28 @@ export default function ProductsPage() {
     },
     {
       key: "harga_jual",
-      label: "Harga Jual",
-      render: (_: unknown, row: ProductRow) => (
-        <span className="text-xs font-semibold text-brand-black">{formatCurrency(cashPrice(row))}</span>
-      ),
+      label: priceFilter === "jual" ? "Harga Jual" : priceFilter === "freelance" ? "Harga Freelance" : priceFilter === "distributor" ? "Harga Distributor" : "Harga (Jual / Freelance / Distributor)",
+      render: (_: unknown, row: ProductRow) => {
+        const cash = cashPrice(row);
+        const freelance = row.freelance_price || cash;
+        const distributor = row.distributor_price || cash;
+        if (priceFilter === "jual") {
+          return <p className="text-xs font-semibold text-brand-black">{formatCurrency(cash)}</p>;
+        }
+        if (priceFilter === "freelance") {
+          return <p className="text-xs font-semibold text-blue-600">{formatCurrency(freelance)}</p>;
+        }
+        if (priceFilter === "distributor") {
+          return <p className="text-xs font-semibold text-purple-600">{formatCurrency(distributor)}</p>;
+        }
+        return (
+          <div className="text-xs leading-5">
+            <p className="font-semibold text-brand-black">{formatCurrency(cash)} <span className="text-[9px] text-brand-gray-light font-normal">jual</span></p>
+            <p className="font-semibold text-blue-600">{formatCurrency(freelance)} <span className="text-[9px] font-normal">freelance</span></p>
+            <p className="font-semibold text-purple-600">{formatCurrency(distributor)} <span className="text-[9px] font-normal">distributor</span></p>
+          </div>
+        );
+      },
     },
     {
       key: "margin",
@@ -455,10 +482,21 @@ export default function ProductsPage() {
             placeholder="Semua Status"
             className="w-36"
           />
-          {(search || category || statusFilter) && (
+          <Select
+            value={priceFilter === "all" ? "" : priceFilter}
+            onChange={(e) => setPriceFilter(e.target.value === "" ? "all" : e.target.value)}
+            options={[
+              { value: "", label: "Semua Harga" },
+              { value: "jual", label: "Harga Jual" },
+              { value: "freelance", label: "Harga Freelance" },
+              { value: "distributor", label: "Harga Distributor" },
+            ]}
+            className="w-40"
+          />
+          {(search || category || statusFilter || priceFilter !== "all") && (
             <button
               className="text-xs text-brand-gray-mid hover:text-brand-black transition-colors"
-              onClick={() => { setSearch(""); setCategory(""); setStatusFilter(""); }}
+              onClick={() => { setSearch(""); setCategory(""); setStatusFilter(""); setPriceFilter("all"); }}
             >
               Reset
             </button>
@@ -589,7 +627,7 @@ export default function ProductsPage() {
               </div>
               {draft.is_own_brand && (
                 <p className="mt-2 text-xs text-brand-gray-mid flex items-center gap-1.5">
-                  <Star className="w-3 h-3 text-brand-yellow fill-brand-yellow" /> Own Brand â€” menambah komisi utama.
+                  <Star className="w-3 h-3 text-brand-yellow fill-brand-yellow" /> Own Brand — menambah komisi utama.
                 </p>
               )}
             </div>
@@ -615,7 +653,7 @@ export default function ProductsPage() {
                 <Input
                   label="Warning Stock" type="number" value={draft.warning_stock}
                   onChange={(e) => setDraft({ ...draft, warning_stock: Number(e.target.value) })}
-                  hint="Alert jika stok â‰¤ nilai ini"
+                  hint="Alert jika stok ≤ nilai ini"
                 />
               </div>
             </div>
@@ -631,6 +669,28 @@ export default function ProductsPage() {
                 placeholder="0"
                 hint="Harga beli / cost of goods."
               />
+            </div>
+
+            {/* Harga Freelance & Distributor */}
+            <div>
+              <p className="text-xs font-bold text-brand-gray-mid uppercase tracking-wide mb-3">
+                Harga per Tipe Pelanggan
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Input
+                  label="Harga Freelance" type="number" value={draft.freelance_price || ""}
+                  onChange={(e) => setDraft({ ...draft, freelance_price: Number(e.target.value) })}
+                  placeholder="0"
+                />
+                <Input
+                  label="Harga Distributor" type="number" value={draft.distributor_price || ""}
+                  onChange={(e) => setDraft({ ...draft, distributor_price: Number(e.target.value) })}
+                  placeholder="0"
+                />
+              </div>
+              <p className="text-xs text-brand-gray-light mt-2">
+                Kosongkan = ikut harga jual term. Invoice menagih sesuai tipe customer.
+              </p>
             </div>
 
             {/* Pricing per Payment Term */}
